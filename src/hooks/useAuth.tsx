@@ -80,7 +80,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Buscar dados do Supabase - profiles e roles
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, nome, email, organization_id')
+        .select('id, nome, organization_id')
         .eq('id', userId)
         .single();
 

@@ -101,7 +101,7 @@ export const SuperAdminDashboard = () => {
               <ShieldAlert className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-black uppercase tracking-tighter">Modo Deus</h1>
+              <h1 className="text-xl font-black uppercase tracking-tighter">Lumina: Modo Deus</h1>
               <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Arquitetura de Expansão</p>
             </div>
           </div>
@@ -270,7 +270,7 @@ export const SuperAdminDashboard = () => {
       </main>
       
       <footer className="max-w-7xl mx-auto p-12 text-center">
-        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black">LYB Ecosystem Sovereign Control — v4.0 Alpha</p>
+        <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black">Lumina Ecosystem Sovereign Control — v4.0 Alpha</p>
       </footer>
     </div>
   );

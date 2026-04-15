@@ -53,9 +53,9 @@ const Admin = () => {
       <div className="bg-primary text-primary-foreground p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">⚙️ Painel Administrativo</h1>
+            <h1 className="text-2xl font-bold">⚙️ Lumina: Painel Master</h1>
             <p className="text-sm opacity-90">
-              Gerenciamento completo do sistema
+              Gerenciamento Administrativo Soberano
             </p>
             {user && (
               <p className="text-xs opacity-75 mt-1">

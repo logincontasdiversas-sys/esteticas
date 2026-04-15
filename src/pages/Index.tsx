@@ -30,9 +30,9 @@ const Index = () => {
       <div className="bg-primary text-primary-foreground p-4">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">🚀 LYB Controle Financeiro</h1>
+            <h1 className="text-2xl font-bold">✨ Lumina Control</h1>
             <p className="text-sm opacity-90">
-              Sistema de controle financeiro para estética
+              Gestão Financeira para Estética e Bem-estar
             </p>
             {user && (
               <p className="text-xs opacity-75 mt-1">

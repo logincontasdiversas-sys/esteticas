@@ -88,7 +88,11 @@ export const SuperAdminDashboard = () => {
     }
 
     setInviting(true);
-    const { error } = await createUserWithRole(ownerEmail, ownerName, 'gestora', targetOrgId);
+    // Localizar o nome da organização para o convite personalizado
+    const org = organizations.find(o => o.id === targetOrgId);
+    const orgName = org?.name || "Lumina Control";
+
+    const { error } = await createUserWithRole(ownerEmail, ownerName, 'gestora', targetOrgId, orgName);
     
     if (error) {
       toast.error("Erro ao convidar empresário: " + error.message);

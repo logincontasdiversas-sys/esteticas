@@ -176,11 +176,12 @@ export const createUserWithRole = async (
   email: string,
   nome: string,
   role: AppRole | 'adm',
-  organizationId: string | null
+  organizationId: string | null,
+  organizationName?: string | null
 ) => {
   if (!organizationId) throw new Error("ID da organização é obrigatório para convidar usuários");
   // ONLY use Edge Function - no fallback to avoid admin logout
-  console.log('Convidando usuário via Supabase Edge Function:', { email, nome, role });
+  console.log('Convidando usuário via Supabase Edge Function:', { email, nome, role, organizationName });
   
   try {
     const { data, error } = await supabase.functions.invoke('invite-user', {
@@ -189,6 +190,7 @@ export const createUserWithRole = async (
         nome, 
         role,
         organization_id: organizationId,
+        organization_name: organizationName || 'Lumina Control',
         origin: window.location.origin
       }
     });

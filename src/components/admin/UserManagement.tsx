@@ -23,7 +23,7 @@ import type { AppRole } from "@/types/Lancamento";
 
 export const UserManagement = () => {
   const { refreshTrigger, triggerRefresh } = useGlobalRefresh();
-  const { forceRefreshAdmin, organizationId } = useAuth();
+  const { forceRefreshAdmin, organizationId, organizationName } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -105,7 +105,7 @@ export const UserManagement = () => {
         return;
       }
       
-      const { error } = await createUserWithRole(email, nome, role, organizationId);
+      const { error } = await createUserWithRole(email, nome, role, organizationId, organizationName);
       if (error) {
         toast.error('Erro ao convidar usuário', { description: error.message });
       } else {

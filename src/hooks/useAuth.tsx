@@ -9,6 +9,7 @@ interface AuthContextType {
   isAdmin: boolean;
   adminData: any;
   organizationId: string | null;
+  organizationName: string | null;
   isSuperAdmin: boolean;
   signOut: () => Promise<void>;
   refreshAuth: () => Promise<void>;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   adminData: null,
   organizationId: null,
+  organizationName: null,
   isSuperAdmin: false,
   signOut: async () => {},
   refreshAuth: async () => {},
@@ -43,6 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [adminData, setAdminData] = useState<any>(null);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [organizationName, setOrganizationName] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [isCheckingAdmin, setIsCheckingAdmin] = useState(false);
 
@@ -67,6 +70,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setIsAdmin(parsed.isAdmin);
         setAdminData(parsed.adminData);
         setOrganizationId(parsed.organizationId || null);
+        setOrganizationName(parsed.organizationName || null);
         setIsSuperAdmin(parsed.isSuperAdmin || false);
         return;
       }
@@ -107,12 +111,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setAdminData(adminStatus ? profile : null);
       setOrganizationId(profile?.organization_id || null);
 
+      let orgName = null;
+      // Buscar nome da organização se houver ID
+      if (profile?.organization_id) {
+        const { data: org } = await supabase
+          .from('organizations')
+          .select('name')
+          .eq('id', profile.organization_id)
+          .single();
+        
+        if (org) {
+          orgName = org.name;
+          setOrganizationName(orgName);
+        }
+      }
+
       // Salvar no cache
       const cacheData = {
         isAdmin: adminStatus,
         isSuperAdmin: superAdminStatus,
         adminData: adminStatus ? profile : null,
         organizationId: profile?.organization_id || null,
+        organizationName: orgName,
         timestamp: Date.now()
       };
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
@@ -141,6 +161,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsAdmin(false);
       setIsSuperAdmin(false);
       setAdminData(null);
+      setOrganizationId(null);
+      setOrganizationName(null);
       
       // Limpar cache
       if (currentUserId) {
@@ -159,6 +181,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsSuperAdmin(false);
       setAdminData(null);
       setOrganizationId(null);
+      setOrganizationName(null);
     }
   };
 
@@ -230,6 +253,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsSuperAdmin(false);
           setAdminData(null);
           setOrganizationId(null);
+          setOrganizationName(null);
           localStorage.clear();
           return;
         }
@@ -243,6 +267,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsAdmin(false);
           setIsSuperAdmin(false);
           setAdminData(null);
+          setOrganizationName(null);
         }
         
         setLoading(false);
@@ -260,6 +285,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     isSuperAdmin,
     adminData,
     organizationId,
+    organizationName,
     signOut,
     refreshAuth,
     forceRefreshAdmin,

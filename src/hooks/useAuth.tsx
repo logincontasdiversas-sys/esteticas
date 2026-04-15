@@ -77,18 +77,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       console.log("[AUTH] Buscando dados do Supabase...");
       
-      // Buscar dados do Supabase - profiles e roles
+      // Buscar dados do Supabase - profiles
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('id, nome, organization_id')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // Usar maybeSingle para não gerar erro 406 se não existir
 
       if (profileError) {
         console.error("[AUTH] Erro ao buscar perfil:", profileError);
-        setIsAdmin(false);
-        setAdminData(null);
-        return;
       }
 
       // Buscar roles do usuário
@@ -107,12 +104,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Verificar se é admin (tem role 'adm' ou 'gestora')
       const userRoles = roles?.map(r => r.role) || [];
-      const adminStatus = userRoles.includes('adm') || userRoles.includes('gestora') || userEmail === 'admin@god.com';
+      const isOwnerOrStaff = userRoles.includes('adm') || userRoles.includes('gestora');
       const superAdminStatus = userEmail === 'admin@god.com';
+      const adminStatus = isOwnerOrStaff || superAdminStatus;
 
       setIsAdmin(adminStatus);
       setIsSuperAdmin(superAdminStatus);
-      setAdminData(adminStatus ? profile : null);
+      setAdminData(profile || (superAdminStatus ? { nome: 'Super Admin', email: userEmail } : null));
       setOrganizationId(profile?.organization_id || null);
 
       let orgName = null;

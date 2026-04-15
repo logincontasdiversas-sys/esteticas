@@ -17,7 +17,18 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import { Building2, UserPlus, ShieldAlert, Rocket, ArrowLeft, RefreshCw, Send } from "lucide-react";
+import { Building2, UserPlus, ShieldAlert, Rocket, ArrowLeft, RefreshCw, Send, Trash2, AlertTriangle } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export const SuperAdminDashboard = () => {
   const navigate = useNavigate();

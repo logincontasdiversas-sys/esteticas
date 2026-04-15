@@ -101,10 +101,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("[AUTH] Erro ao buscar roles:", rolesError);
       }
 
+      // Buscar e-mail do usuário autenticado para validação de Super Admin
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      const userEmail = authUser?.email;
+
       // Verificar se é admin (tem role 'adm' ou 'gestora')
       const userRoles = roles?.map(r => r.role) || [];
-      const adminStatus = userRoles.includes('adm') || userRoles.includes('gestora') || profile?.email === 'admin@god.com';
-      const superAdminStatus = profile?.email === 'admin@god.com';
+      const adminStatus = userRoles.includes('adm') || userRoles.includes('gestora') || userEmail === 'admin@god.com';
+      const superAdminStatus = userEmail === 'admin@god.com';
 
       setIsAdmin(adminStatus);
       setIsSuperAdmin(superAdminStatus);

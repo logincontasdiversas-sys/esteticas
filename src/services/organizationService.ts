@@ -60,6 +60,12 @@ export const createOrganization = async (name: string) => {
     
     console.log('✅ [organizationService] Org criada:', data);
     return { data: data as Organization, error: null };
+  } catch (error) {
+    console.error('❌ [organizationService] Erro crítico:', error);
+    return { data: null, error: error instanceof Error ? error : new Error('Erro desconhecido') };
+  }
+};
+
 /**
  * Delete an organization
  */

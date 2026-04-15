@@ -108,7 +108,7 @@ export const SuperAdminDashboard = () => {
       toast.error(`Falha ao extinguir organização ${name}.`);
     } else {
       toast.success(`Organização ${name} e todos os seus dados foram extintos.`);
-      fetchOrganizations();
+      loadData();
     }
     setDeletingId(null);
   };

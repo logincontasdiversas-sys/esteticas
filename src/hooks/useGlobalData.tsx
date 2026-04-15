@@ -198,16 +198,67 @@ export const GlobalDataProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     console.log('[GLOBAL DATA] useEffect executado, user:', user?.email);
-    if (user) {
+    
+    let channel: any = null;
+
+    if (user && organizationId) {
       fetchData();
+
+      // Configurar Realtime
+      console.log('[GLOBAL DATA] 🛰️ Iniciando assinatura Realtime para org:', organizationId);
+      
+      channel = supabase
+        .channel('realtime-global-data')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'lancamentos' },
+          (payload) => {
+            if (payload.new && (payload.new as any).organization_id === organizationId) {
+              console.log('[REALTIME] Lançamento alterado, recarregando...');
+              fetchData();
+            } else if (payload.old && (payload.old as any).organization_id === organizationId) {
+              console.log('[REALTIME] Lançamento deletado, recarregando...');
+              fetchData();
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'profissionais' },
+          (payload) => {
+            if (payload.new && (payload.new as any).organization_id === organizationId) {
+              console.log('[REALTIME] Profissional alterado, recarregando...');
+              fetchData();
+            }
+          }
+        )
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'aportes_caixa' },
+          (payload) => {
+            if (payload.new && (payload.new as any).organization_id === organizationId) {
+              console.log('[REALTIME] Aporte alterado, recarregando...');
+              fetchData();
+            }
+          }
+        )
+        .subscribe();
+
     } else {
       console.log('[GLOBAL DATA] Sem usuário, limpando estado');
       setLancamentos([]);
       setProfissionais([]);
       setFluxoCaixa(null);
       setLoading(false);
-      fetchingRef.current = false; // Reset fetching flag
+      fetchingRef.current = false;
     }
+
+    return () => {
+      if (channel) {
+        console.log('[GLOBAL DATA] 🔇 Removendo assinatura Realtime');
+        supabase.removeChannel(channel);
+      }
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, organizationId]);
 

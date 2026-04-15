@@ -60,8 +60,27 @@ export const createOrganization = async (name: string) => {
     
     console.log('✅ [organizationService] Org criada:', data);
     return { data: data as Organization, error: null };
+/**
+ * Delete an organization
+ */
+export const deleteOrganization = async (id: string) => {
+  console.log('🔄 [organizationService] Deletando organização:', id);
+  
+  try {
+    const { error } = await supabase
+      .from('organizations')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error('❌ [organizationService] Erro ao deletar org:', error);
+      return { error };
+    }
+    
+    console.log('✅ [organizationService] Org deletada com sucesso');
+    return { error: null };
   } catch (error) {
-    console.error('❌ [organizationService] Erro crítico:', error);
-    return { data: null, error: error instanceof Error ? error : new Error('Erro desconhecido') };
+    console.error('❌ [organizationService] Erro crítico ao deletar:', error);
+    return { error: error instanceof Error ? error : new Error('Erro desconhecido') };
   }
 };

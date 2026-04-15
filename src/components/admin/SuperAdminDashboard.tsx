@@ -8,7 +8,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate, Navigate } from "react-router-dom";
-import { getOrganizations, createOrganization, Organization } from "@/services/organizationService";
+import { getOrganizations, createOrganization, deleteOrganization, Organization } from "@/services/organizationService";
 import { createUserWithRole } from "@/services/userManagementService";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,6 +27,7 @@ export const SuperAdminDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   
   // Form states
   const [newOrgName, setNewOrgName] = useState("");
@@ -86,6 +87,19 @@ export const SuperAdminDashboard = () => {
       setOwnerName("");
     }
     setInviting(false);
+  };
+
+  const handleDeleteOrg = async (id: string, name: string) => {
+    setDeletingId(id);
+    const { error } = await deleteOrganization(id);
+    
+    if (error) {
+      toast.error(`Falha ao extinguir organização ${name}.`);
+    } else {
+      toast.success(`Organização ${name} e todos os seus dados foram extintos.`);
+      fetchOrganizations();
+    }
+    setDeletingId(null);
   };
 
   if (authLoading) return <div className="p-8 text-center">Verificando autoridade...</div>;
@@ -238,7 +252,8 @@ export const SuperAdminDashboard = () => {
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Slug / Namespace</TableHead>
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">ID Identificador</TableHead>
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Data de Criação</TableHead>
-                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px] text-right">Status</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Status</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px] text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -253,8 +268,43 @@ export const SuperAdminDashboard = () => {
                   <TableCell className="text-xs text-slate-200 font-medium">
                     {new Date(org.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell>
                     <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3 py-1">Ativa</Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="text-slate-500 hover:text-red-400 hover:bg-red-400/10"
+                          disabled={deletingId === org.id}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="bg-slate-900 border-slate-800 text-white">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="flex items-center gap-2 text-red-400">
+                            <AlertTriangle className="w-5 h-5" /> Extinção de Organização
+                          </AlertDialogTitle>
+                          <AlertDialogDescription className="text-slate-400">
+                            Você está prestes a apagar **{org.name}**. Esta ação é irreversível e apagará TODOS os lançamentos, profissionais e usuários vinculados a esta empresa.
+                            <br /><br />
+                            Deseja prosseguir com a exclusão total?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="bg-slate-800 border-slate-700 text-white hover:bg-slate-700">Cancelar</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteOrg(org.id, org.name)}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                          >
+                            Excluir Permanentemente
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </TableCell>
                 </TableRow>
               ))}

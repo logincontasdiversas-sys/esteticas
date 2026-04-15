@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* CaixaTrack LYB Design System - Professional Clean Palette */
+    --background: 0 0% 98%;
+    --foreground: 220 13% 18%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 13% 18%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 13% 18%;
+
+    /* Primary: Blue #4A90E2 → HSL(212, 70%, 59%) */
+    --primary: 212 70% 59%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 212 70% 50%;
+
+    /* Success: Green #50C878 → HSL(145, 57%, 55%) */
+    --success: 145 57% 55%;
+    --success-foreground: 0 0% 100%;
+
+    /* Warning: Soft Red #E74C3C → HSL(6, 78%, 57%) */
+    --warning: 6 78% 57%;
+    --warning-foreground: 0 0% 100%;
+
+    --secondary: 220 13% 95%;
+    --secondary-foreground: 220 13% 18%;
+
+    --muted: 220 13% 92%;
+    --muted-foreground: 220 9% 46%;
+
+    --accent: 212 70% 96%;
+    --accent-foreground: 212 70% 59%;
+
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 13% 88%;
+    --input: 220 13% 88%;
+    --ring: 212 70% 59%;
+
+    --radius: 0.5rem;
+    
+    /* Custom tokens for CaixaTrack */
+    --shadow-subtle: 0 2px 8px hsla(220, 13%, 18%, 0.08);
+    --shadow-card: 0 4px 12px hsla(220, 13%, 18%, 0.12);
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 0 0% 98%;
+
+    --sidebar-foreground: 240 5.3% 26.1%;
+
+    --sidebar-primary: 240 5.9% 10%;
+
+    --sidebar-primary-foreground: 0 0% 98%;
+
+    --sidebar-accent: 240 4.8% 95.9%;
+
+    --sidebar-accent-foreground: 240 5.9% 10%;
+
+    --sidebar-border: 220 13% 91%;
+
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 220 18% 12%;
+    --foreground: 220 13% 95%;
+
+    --card: 220 18% 15%;
+    --card-foreground: 220 13% 95%;
+
+    --popover: 220 18% 15%;
+    --popover-foreground: 220 13% 95%;
+
+    --primary: 212 70% 59%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 212 70% 65%;
+
+    --success: 145 57% 55%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 6 78% 57%;
+    --warning-foreground: 0 0% 100%;
+
+    --secondary: 220 18% 20%;
+    --secondary-foreground: 220 13% 95%;
+
+    --muted: 220 18% 18%;
+    --muted-foreground: 220 9% 65%;
+
+    --accent: 220 18% 22%;
+    --accent-foreground: 212 70% 65%;
+
+    --destructive: 6 78% 57%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 18% 25%;
+    --input: 220 18% 25%;
+    --ring: 212 70% 65%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+  }
+}
+
+@layer components {
+  /* Custom component utilities */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .input-float {
+    @apply border-input focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all;
+  }
+  
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary-hover rounded-lg px-4 py-2 font-medium transition-all;
+  }
+  
+  .btn-success {
+    @apply bg-success text-success-foreground hover:brightness-110 rounded-lg px-4 py-2 font-medium transition-all;
+  }
+}

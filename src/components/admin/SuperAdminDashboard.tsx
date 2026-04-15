@@ -118,26 +118,27 @@ export const SuperAdminDashboard = () => {
       <main className="max-w-7xl mx-auto p-8 space-y-8">
         {/* Welcome Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="bg-gradient-to-br from-indigo-900/40 to-slate-900 border-indigo-500/20 md:col-span-2">
+          <Card className="md:col-span-2 bg-slate-950 border-indigo-500/20 shadow-2xl shadow-indigo-500/5 overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-600/5 rounded-full -mr-16 -mt-16 blur-3xl" />
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-indigo-300">
-                <Rocket className="w-5 h-5" /> Soberania Administrativa
+              <CardTitle className="flex items-center gap-2 text-white text-2xl font-black tracking-tight">
+                <Rocket className="w-6 h-6 text-indigo-400" /> Soberania Administrativa
               </CardTitle>
-              <CardDescription className="text-slate-200 font-medium">
+              <CardDescription className="text-slate-300 font-medium max-w-md">
                 Bem-vindo ao centro de comando. Aqui você escala o ecossistema Lumina criando novos universos empresariais.
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="flex gap-4">
-                <div className="bg-white/10 p-4 rounded-xl flex-1 border border-white/10 hover:border-indigo-500/50 transition-all cursor-default shadow-inner">
-                  <p className="text-xs text-indigo-300 uppercase font-black mb-1">Total de Organizações</p>
-                  <p className="text-4xl font-black text-white">{organizations.length}</p>
+            <CardContent className="relative z-10">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="bg-white/5 p-6 rounded-2xl flex-1 border border-white/10 hover:border-indigo-500/50 transition-all cursor-default group shadow-2xl">
+                  <p className="text-[10px] text-indigo-400 uppercase font-black mb-2 tracking-widest">Total de Organizações</p>
+                  <p className="text-5xl font-black text-white group-hover:scale-105 transition-transform origin-left">{organizations.length}</p>
                 </div>
-                <div className="bg-white/10 p-4 rounded-xl flex-1 border border-white/10 hover:border-indigo-500/50 transition-all cursor-default shadow-inner">
-                  <p className="text-xs text-indigo-300 uppercase font-black mb-1">Status do Sistema</p>
-                  <div className="flex items-center gap-2 text-emerald-300">
-                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
-                    <p className="text-sm font-black uppercase tracking-wider">100% Operacional</p>
+                <div className="bg-white/5 p-6 rounded-2xl flex-1 border border-white/10 hover:border-indigo-500/50 transition-all cursor-default group shadow-2xl">
+                  <p className="text-[10px] text-indigo-400 uppercase font-black mb-2 tracking-widest">Status do Sistema</p>
+                  <div className="flex items-center gap-3 text-emerald-400">
+                    <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.6)]" />
+                    <p className="text-sm font-black uppercase tracking-widest">100% Operacional</p>
                   </div>
                 </div>
               </div>

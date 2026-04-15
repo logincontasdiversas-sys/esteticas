@@ -123,21 +123,21 @@ export const SuperAdminDashboard = () => {
               <CardTitle className="flex items-center gap-2 text-indigo-300">
                 <Rocket className="w-5 h-5" /> Soberania Administrativa
               </CardTitle>
-              <CardDescription className="text-slate-400">
-                Bem-vindo ao centro de comando. Aqui você escala o ecossistema LYB criando novos universos empresariais.
+              <CardDescription className="text-slate-200 font-medium">
+                Bem-vindo ao centro de comando. Aqui você escala o ecossistema Lumina criando novos universos empresariais.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex gap-4">
-                <div className="bg-white/5 p-4 rounded-xl flex-1 border border-white/5 hover:border-indigo-500/30 transition-all cursor-default">
-                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">Total de Organizações</p>
-                  <p className="text-3xl font-black">{organizations.length}</p>
+                <div className="bg-white/10 p-4 rounded-xl flex-1 border border-white/10 hover:border-indigo-500/50 transition-all cursor-default shadow-inner">
+                  <p className="text-xs text-indigo-300 uppercase font-black mb-1">Total de Organizações</p>
+                  <p className="text-4xl font-black text-white">{organizations.length}</p>
                 </div>
-                <div className="bg-white/5 p-4 rounded-xl flex-1 border border-white/5 hover:border-indigo-500/30 transition-all cursor-default">
-                  <p className="text-xs text-slate-500 uppercase font-bold mb-1">Status do Sistema</p>
-                  <div className="flex items-center gap-2 text-emerald-400">
-                    <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <p className="text-sm font-bold">100% Operacional</p>
+                <div className="bg-white/10 p-4 rounded-xl flex-1 border border-white/10 hover:border-indigo-500/50 transition-all cursor-default shadow-inner">
+                  <p className="text-xs text-indigo-300 uppercase font-black mb-1">Status do Sistema</p>
+                  <div className="flex items-center gap-2 text-emerald-300">
+                    <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_10px_rgba(52,211,153,0.5)]" />
+                    <p className="text-sm font-black uppercase tracking-wider">100% Operacional</p>
                   </div>
                 </div>
               </div>
@@ -152,13 +152,13 @@ export const SuperAdminDashboard = () => {
             <CardContent>
               <form onSubmit={handleCreateOrg} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="orgName" className="text-xs text-slate-400">Nome da Empresa</Label>
+                  <Label htmlFor="orgName" className="text-xs text-slate-300 font-bold uppercase">Nome da Empresa</Label>
                   <Input 
                     id="orgName"
                     value={newOrgName}
                     onChange={(e) => setNewOrgName(e.target.value)}
                     placeholder="Ex: Estética Sol Nascente"
-                    className="bg-black/40 border-white/10 focus:border-indigo-500"
+                    className="bg-black/60 border-white/20 focus:border-indigo-500 text-white placeholder:text-slate-600"
                   />
                 </div>
                 <Button type="submit" disabled={creating} className="w-full bg-indigo-600 hover:bg-indigo-700 shadow-lg shadow-indigo-600/20">
@@ -183,36 +183,36 @@ export const SuperAdminDashboard = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleInviteOwner} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-              <div className="space-y-2">
-                <Label className="text-xs text-slate-400">Organização Destino</Label>
+            <div className="space-y-2">
+                <Label className="text-xs text-slate-300 font-bold uppercase">Organização Destino</Label>
                 <select 
-                  className="w-full h-10 bg-black/40 border border-white/10 rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                  className="w-full h-10 bg-black/60 border border-white/20 rounded-md px-3 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500 text-white"
                   value={targetOrgId}
                   onChange={(e) => setTargetOrgId(e.target.value)}
                 >
-                  <option value="">Selecione...</option>
+                  <option value="" className="bg-slate-900">Selecione...</option>
                   {organizations.map(org => (
-                    <option key={org.id} value={org.id}>{org.name}</option>
+                    <option key={org.id} value={org.id} className="bg-slate-900">{org.name}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-slate-400">Nome do Empresário</Label>
+                <Label className="text-xs text-slate-300 font-bold uppercase">Nome do Empresário</Label>
                 <Input 
                   value={ownerName}
                   onChange={(e) => setOwnerName(e.target.value)}
                   placeholder="Nome Completo"
-                  className="bg-black/40 border-white/10"
+                  className="bg-black/60 border-white/20 text-white placeholder:text-slate-600"
                 />
               </div>
               <div className="space-y-2">
-                <Label className="text-xs text-slate-400">Email do Empresário</Label>
+                <Label className="text-xs text-slate-300 font-bold uppercase">Email do Empresário</Label>
                 <Input 
                   type="email"
                   value={ownerEmail}
                   onChange={(e) => setOwnerEmail(e.target.value)}
                   placeholder="email@empresa.com"
-                  className="bg-black/40 border-white/10"
+                  className="bg-black/60 border-white/20 text-white placeholder:text-slate-600"
                 />
               </div>
               <Button type="submit" disabled={inviting} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
@@ -231,29 +231,29 @@ export const SuperAdminDashboard = () => {
             </Button>
           </CardHeader>
           <Table>
-            <TableHeader className="bg-black/40">
-              <TableRow className="border-white/5 hover:bg-transparent">
-                <TableHead className="text-slate-400">Organização</TableHead>
-                <TableHead className="text-slate-400">Slug / Namespace</TableHead>
-                <TableHead className="text-slate-400">ID Identificador</TableHead>
-                <TableHead className="text-slate-400">Data de Criação</TableHead>
-                <TableHead className="text-slate-400 text-right">Status</TableHead>
+            <TableHeader className="bg-black/60">
+              <TableRow className="border-white/10 hover:bg-transparent">
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Organização</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Slug / Namespace</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">ID Identificador</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Data de Criação</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px] text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {organizations.map((org) => (
-                <TableRow key={org.id} className="border-white/5 hover:bg-white/5 transition-colors group">
-                  <TableCell className="font-bold text-indigo-100 flex items-center gap-2">
-                    <Building2 className="w-4 h-4 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                <TableRow key={org.id} className="border-white/10 hover:bg-white/10 transition-colors group">
+                  <TableCell className="font-black text-white flex items-center gap-2 py-4">
+                    <Building2 className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
                     {org.name}
                   </TableCell>
-                  <TableCell className="font-mono text-[10px] text-slate-500">{org.slug}</TableCell>
-                  <TableCell className="font-mono text-[10px] text-slate-500">{org.id}</TableCell>
-                  <TableCell className="text-xs text-slate-500">
+                  <TableCell className="font-mono text-[10px] text-slate-300 font-bold">{org.slug}</TableCell>
+                  <TableCell className="font-mono text-[10px] text-slate-400">{org.id}</TableCell>
+                  <TableCell className="text-xs text-slate-200 font-medium">
                     {new Date(org.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <Badge className="bg-emerald-500/10 text-emerald-500 border-emerald-500/20">Ativa</Badge>
+                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3 py-1">Ativa</Badge>
                   </TableCell>
                 </TableRow>
               ))}

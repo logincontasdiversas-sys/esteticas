@@ -47,51 +47,68 @@ const SetPassword = () => {
 
   const [hashProcessed, setHashProcessed] = useState(false);
 
-  // EFEITO 1: Processar o Hash do link de convite (apenas uma vez)
+  // EFEITO 1: Processar o link de convite (Hash ou Query Params)
   useEffect(() => {
     const handleHash = async () => {
       const hash = window.location.hash;
-      if (!hash) {
+      const search = window.location.search;
+      
+      if (!hash && !search) {
         setHashProcessed(true);
         return;
       }
 
       console.log('[SET-PASSWORD] 🎫 Processando link de convite...');
       
-      // Extração robusta (URLSearchParams + Regex Fallback)
-      const params = new URLSearchParams(hash.substring(1));
+      // Combinar as strings para busca única
+      const fullParams = hash + '&' + search;
+      const params = new URLSearchParams(fullParams.replace(/^[#?]/, ''));
+      
       let accessToken = params.get('access_token');
       let refreshToken = params.get('refresh_token');
       let type = params.get('type');
 
+      // Fallback para Regex se URLSearchParams falhar (em strings complexas ou múltiplas marcas)
       if (!accessToken || !refreshToken || !type) {
-        accessToken = accessToken || hash.match(/access_token=([^&]+)/)?.[1] || null;
-        refreshToken = refreshToken || hash.match(/refresh_token=([^&]+)/)?.[1] || null;
-        type = type || hash.match(/type=([^&]+)/)?.[1] || null;
+        const fullRaw = window.location.href;
+        accessToken = accessToken || fullRaw.match(/[#?&]access_token=([^&]+)/)?.[1] || null;
+        refreshToken = refreshToken || fullRaw.match(/[#?&]refresh_token=([^&]+)/)?.[1] || null;
+        type = type || fullRaw.match(/[#?&]type=([^&]+)/)?.[1] || null;
       }
 
-      console.log('[SET-PASSWORD] 🔍 Análise do Hash:', { type, hasAccess: !!accessToken, hasRefresh: !!refreshToken });
+      console.log('[SET-PASSWORD] 🔍 Análise da URL:', { 
+        type, 
+        hasAccess: !!accessToken, 
+        hasRefresh: !!refreshToken,
+        foundIn: hash ? 'hash' : 'search'
+      });
 
       if (accessToken && refreshToken) {
         try {
-          supabase.auth.setSession({
+          console.log('[SET-PASSWORD] ⏳ Sincronizando sessão com o servidor...');
+          const { error } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
-          }).then(({ error }) => {
-            if (error) console.error('[SET-PASSWORD] ❌ Erro ao configurar sessão:', error.message);
-            else console.log('[SET-PASSWORD] ✅ Sessão sincronizada com o SDK');
           });
+          
+          if (error) {
+            console.error('[SET-PASSWORD] ❌ Erro do Supabase:', error.message);
+          } else {
+            console.log('[SET-PASSWORD] ✅ Sessão sincronizada com o SDK');
+          }
         } catch (err) {
           console.error('[SET-PASSWORD] Erro fatal no setSession:', err);
         }
+      } else {
+        console.warn('[SET-PASSWORD] ⚠️ Tokens não encontrados na URL atual.');
       }
 
-      // LIMPEZA OBRIGATÓRIA: Limpar o hash idependente de sucesso
+      // LIMPEZA OBRIGATÓRIA: Limpar a URL independente do resultado
       setTimeout(() => {
         window.history.replaceState(null, '', window.location.pathname);
-        console.log('[SET-PASSWORD] 🧹 Hash limpo para liberar interface');
+        console.log('[SET-PASSWORD] 🧹 URL limpa para liberar interface');
         setHashProcessed(true);
-      }, 500);
+      }, 800);
     };
     
     handleHash();

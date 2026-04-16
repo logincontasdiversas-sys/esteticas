@@ -304,7 +304,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await checkAdminStatus(session.user.id);
+          checkAdminStatus(session.user.id);
         }
       } catch (error) {
         console.error("[AUTH] Erro ao verificar sessão inicial:", error);
@@ -336,7 +336,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await checkAdminStatus(session.user.id);
+          checkAdminStatus(session.user.id);
         } else {
           setIsAdmin(false);
           setIsSuperAdmin(false);

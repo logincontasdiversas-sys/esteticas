@@ -104,10 +104,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("[AUTH] Erro ao buscar roles:", rolesError);
       }
 
-      // Buscar e-mail e metadados do usuário autenticado para fallback
+      // Buscar e-mail e metadados do usuário autenticado para fallback (reutilizando metadata já declarada)
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userEmail = authUser?.email;
-      const metadata = authUser?.user_metadata || {};
+      const userMetadata = authUser?.user_metadata || metadata;
 
       // Verificar se é admin (tem role 'adm' ou 'gestora')
       const userRoles = roles?.map(r => r.role) || [];

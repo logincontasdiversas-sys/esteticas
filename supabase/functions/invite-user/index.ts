@@ -14,9 +14,9 @@ const handler = async (req: Request) => {
   }
 
   try {
-    const { email, nome, role, origin, organization_id } = await req.json();
+    const { email, nome, role, origin, organization_id, organization_name } = await req.json();
     
-    console.log(`📧 Convite de usuário para ${email}: ${nome} (${role}) na organização ${organization_id} na origem ${origin}`);
+    console.log(`📧 Convite de usuário para ${email}: ${nome} (${role}) na organização ${organization_id} (${organization_name}) na origem ${origin}`);
     
     // PRIORIDADE: Origem enviada pelo frontend > Secret APP_URL > Default
     const appUrl = origin || Deno.env.get('APP_URL') || 'http://localhost:8081';
@@ -83,12 +83,14 @@ const handler = async (req: Request) => {
     // SINCRONIZAÇÃO OBRIGATÓRIA (Omega Stability v5.0 - BLOCKING)
     try {
       console.log('👤 Criando Perfil no Banco de Dados...');
-      // Estrutura validada: id, nome, email, organization_id
+      // Estrutura validada: id, nome, email, organization_id, organization_name, role
       const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
         id: userData.user.id,
         nome: nome,
         email: email,
         organization_id: organization_id,
+        organization_name: organization_name || 'Lumina Control',
+        role: role,
         updated_at: new Date().toISOString()
       }, { onConflict: 'id' });
 

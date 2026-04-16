@@ -64,7 +64,8 @@ const createUserLocally = async (email: string, nome: string, role: AppRole | 'a
           nome: nome,
           email: email,
           role: role,
-          organization_id: currentUser?.user_metadata?.organization_id // Assumir org do admin criador
+          organization_id: currentUser?.user_metadata?.organization_id, // Assumir org do admin criador
+          organization_name: currentUser?.user_metadata?.organization_name || 'LYB Estética'
         });
       
       if (profileError) {

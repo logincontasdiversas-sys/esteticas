@@ -48,33 +48,48 @@ const SetPassword = () => {
   // EFEITO 1: Processar o Hash do link de convite (apenas uma vez)
   useEffect(() => {
     const handleHash = async () => {
-      if (window.location.hash) {
-        console.log('[SET-PASSWORD] 🎫 Processando link de convite...');
-        const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const accessToken = hashParams.get('access_token');
-        const refreshToken = hashParams.get('refresh_token');
-        const type = hashParams.get('type');
-        
-        if ((type === 'recovery' || type === 'invite') && accessToken && refreshToken) {
-          console.log('[SET-PASSWORD] ⏳ Consumindo token de acesso...');
-          
-          // Limpar hash imediatamente para evitar re-processamento
-          window.history.replaceState(null, '', window.location.pathname);
+      const hash = window.location.hash;
+      if (!hash) return;
 
-          try {
-            // Tentamos configurar, mas não travamos a UI se o SDK demorar
-            supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            }).then(({ error }) => {
-              if (error) console.error('[SET-PASSWORD] Erro silencioso no setSession:', error);
-              else console.log('[SET-PASSWORD] ✅ Token aceito pelo SDK');
-            });
-          } catch (err) {
-            console.warn('[SET-PASSWORD] Falha ao iniciar setSession:', err);
-          }
-        }
+      console.log('[SET-PASSWORD] 🎫 Processando link de convite...');
+      
+      // Extração robusta (URLSearchParams + Regex Fallback)
+      const params = new URLSearchParams(hash.substring(1));
+      let accessToken = params.get('access_token');
+      let refreshToken = params.get('refresh_token');
+      let type = params.get('type');
+
+      // Fallback para Regex se URLSearchParams falhar em algum campo
+      if (!accessToken || !refreshToken || !type) {
+        accessToken = accessToken || hash.match(/access_token=([^&]+)/)?.[1] || null;
+        refreshToken = refreshToken || hash.match(/refresh_token=([^&]+)/)?.[1] || null;
+        type = type || hash.match(/type=([^&]+)/)?.[1] || null;
       }
+
+      console.log('[SET-PASSWORD] 🔍 Análise do Hash:', { type, hasAccess: !!accessToken, hasRefresh: !!refreshToken });
+
+      if (accessToken && refreshToken) {
+        console.log('[SET-PASSWORD] ⏳ Consumindo tokens detectados...');
+        try {
+          supabase.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          }).then(({ error }) => {
+            if (error) console.error('[SET-PASSWORD] ❌ Erro ao configurar sessão:', error.message);
+            else console.log('[SET-PASSWORD] ✅ Sessão sincronizada com o SDK');
+          });
+        } catch (err) {
+          console.error('[SET-PASSWORD] Erro fatal no setSession:', err);
+        }
+      } else {
+        console.warn('[SET-PASSWORD] ⚠️ Tokens não encontrados no hash.');
+      }
+
+      // LIMPEZA OBRIGATÓRIA: Limpar o hash idependente de sucesso para liberar o Efeito 2
+      setTimeout(() => {
+        window.history.replaceState(null, '', window.location.pathname);
+        console.log('[SET-PASSWORD] 🧹 Hash limpo para liberar interface');
+      }, 500);
     };
     
     handleHash();
@@ -82,21 +97,21 @@ const SetPassword = () => {
 
   // EFEITO 2: Monitorar o estado de autenticação global para liberar a tela
   useEffect(() => {
-    console.log('[SET-PASSWORD] 🔍 Estado Global:', { userEmail: user?.email, authLoading });
+    const hasHash = !!window.location.hash;
+    console.log('[SET-PASSWORD] 🔍 Monitoramento Auth:', { userEmail: user?.email, authLoading, hasHash });
     
     if (user) {
-      console.log('[SET-PASSWORD] ✨ Usuário detectado no contexto. Liberando tela.');
+      console.log('[SET-PASSWORD] ✨ Usuário detectado! Liberando formulário.');
       setValidating(false);
-    } else if (!authLoading && !window.location.hash) {
-      // Se terminou de carregar o auth, não tem usuário e não tem hash pra processar...
-      // Dá um tempo extra para o SDK de 2 segundos antes de dar erro
+    } else if (!authLoading && !hasHash) {
+      // Se não estamos carregando e não tem hash, significa que o processamento terminou
+      // Damos mais 2 segundos antes de desistir
       const timer = setTimeout(() => {
         if (!user) {
-          console.error('[SET-PASSWORD] 💀 Nenhuma sessão encontrada após cooldown.');
-          // Por enquanto não vamos redirecionar agressivamente para não atrapalhar o teste
-          // toast.error("Por favor, clique no link do email novamente.");
+          console.warn('[SET-PASSWORD] ⚠️ Nenhuma sessão detectada após processamento. Forçando exibição do erro/login.');
+          setValidating(false); // Liberamos para mostrar o formulário ou erro interno
         }
-      }, 3000);
+      }, 2000);
       return () => clearTimeout(timer);
     }
   }, [user, authLoading]);

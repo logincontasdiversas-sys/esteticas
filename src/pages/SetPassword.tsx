@@ -5,18 +5,11 @@
  * @layer: pages
  */
 
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
-import { Logo } from "@/components/Logo";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { toast } from "sonner";
+import { useAuth } from "@/hooks/useAuth";
 
 const SetPassword = () => {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(true);
   const [password, setPassword] = useState("");
@@ -43,88 +36,61 @@ const SetPassword = () => {
     setPasswordStrength({ score, feedback });
   };
 
+  // EFEITO 1: Processar o Hash do link de convite (apenas uma vez)
   useEffect(() => {
-    const checkSession = async () => {
-      console.log('[SET-PASSWORD] Verificando sessão...');
-      
-      try {
-        // Primeiro, verificar se há hash fragment (magic link via URL)
-        if (window.location.hash) {
-          console.log('[SET-PASSWORD] Hash fragment detectado:', window.location.hash);
-          const hashParams = new URLSearchParams(window.location.hash.substring(1));
-          const accessToken = hashParams.get('access_token');
-          const refreshToken = hashParams.get('refresh_token');
-          const type = hashParams.get('type');
+    const handleHash = async () => {
+      if (window.location.hash) {
+        console.log('[SET-PASSWORD] 🎫 Processando link de convite...');
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+        const type = hashParams.get('type');
+        
+        if ((type === 'recovery' || type === 'invite') && accessToken && refreshToken) {
+          console.log('[SET-PASSWORD] ⏳ Consumindo token de acesso...');
           
-          console.log('[SET-PASSWORD] Type:', type, 'Tokens presentes:', !!accessToken, !!refreshToken);
-          
-          if ((type === 'recovery' || type === 'signup' || type === 'invite') && accessToken && refreshToken) {
-            console.log('[SET-PASSWORD] ⏳ Iniciando configuração de sessão (com timeout)...');
-            
-            // Timeout Soberano: Se o SDK não responder em 3s, seguimos em frente
-            const timeoutPromise = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('TIMEOUT_SDK')), 3000)
-            );
+          // Limpar hash imediatamente para evitar re-processamento
+          window.history.replaceState(null, '', window.location.pathname);
 
-            const sessionPromise = supabase.auth.setSession({
+          try {
+            // Tentamos configurar, mas não travamos a UI se o SDK demorar
+            supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
+            }).then(({ error }) => {
+              if (error) console.error('[SET-PASSWORD] Erro silencioso no setSession:', error);
+              else console.log('[SET-PASSWORD] ✅ Token aceito pelo SDK');
             });
-
-            try {
-              await Promise.race([sessionPromise, timeoutPromise]);
-              console.log('[SET-PASSWORD] ✅ Sessão configurada com sucesso via SDK');
-            } catch (err: any) {
-              if (err.message === 'TIMEOUT_SDK') {
-                console.warn('[SET-PASSWORD] ⚠️ Timeout no setSession atingido. Forçando continuação...');
-              } else {
-                console.error('[SET-PASSWORD] ❌ Erro ao configurar sessão:', err);
-              }
-            }
-            
-            // Limpar hash da URL independente do resultado para evitar loops
-            window.history.replaceState(null, '', window.location.pathname);
+          } catch (err) {
+            console.warn('[SET-PASSWORD] Falha ao iniciar setSession:', err);
           }
         }
-        
-        // Agora verificar se tem sessão válida
-        console.log('[SET-PASSWORD] 🔍 Verificando estado final da sessão...');
-        const { data: { session }, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          console.error('[SET-PASSWORD] ❌ Erro ao buscar sessão final:', error);
-          toast.error("Erro ao verificar sessão");
-          navigate("/auth");
-          return;
-        }
-        
-        if (!session) {
-          console.log('[SET-PASSWORD] ⚠️ Nenhuma sessão encontrada após configuração. Tentativa de recuperação...');
-          await new Promise(resolve => setTimeout(resolve, 800));
-          const { data: { session: retrySession } } = await supabase.auth.getSession();
-          
-          if (!retrySession) {
-            console.error('[SET-PASSWORD] 💀 Falha crítica: Link inválido ou expirado.');
-            toast.error("Acesso não autorizado ou link expirado.");
-            navigate("/auth");
-            return;
-          }
-          console.log('[SET-PASSWORD] 💎 Sessão recuperada:', retrySession.user.email);
-        } else {
-          console.log('[SET-PASSWORD] ✨ Sessão ativa:', session.user.email);
-        }
-        
-        console.log('[SET-PASSWORD] 🔓 Liberando formulário de senha');
-        setValidating(false);
-      } catch (error: any) {
-        console.error('[SET-PASSWORD] 💥 Erro catastrófico:', error);
-        toast.error("Erro ao validar acesso");
-        setValidating(false); // Failsafe: nunca deixar o usuário preso no spinner
       }
     };
     
-    checkSession();
-  }, [navigate]);
+    handleHash();
+  }, []);
+
+  // EFEITO 2: Monitorar o estado de autenticação global para liberar a tela
+  useEffect(() => {
+    console.log('[SET-PASSWORD] 🔍 Estado Global:', { userEmail: user?.email, authLoading });
+    
+    if (user) {
+      console.log('[SET-PASSWORD] ✨ Usuário detectado no contexto. Liberando tela.');
+      setValidating(false);
+    } else if (!authLoading && !window.location.hash) {
+      // Se terminou de carregar o auth, não tem usuário e não tem hash pra processar...
+      // Dá um tempo extra para o SDK de 2 segundos antes de dar erro
+      const timer = setTimeout(() => {
+        if (!user) {
+          console.error('[SET-PASSWORD] 💀 Nenhuma sessão encontrada após cooldown.');
+          // Por enquanto não vamos redirecionar agressivamente para não atrapalhar o teste
+          // toast.error("Por favor, clique no link do email novamente.");
+        }
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [user, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

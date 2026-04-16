@@ -103,19 +103,29 @@ const SetPassword = () => {
 
     // Real Supabase implementation
     try {
+      console.log('[SET-PASSWORD] ⏳ Iniciando atualização de senha no Supabase...');
       const { error } = await supabase.auth.updateUser({
         password: password
       });
-
-      if (error) throw error;
-
+ 
+      if (error) {
+        console.error('[SET-PASSWORD] ❌ Erro ao atualizar senha:', error.message);
+        throw error;
+      }
+ 
+      console.log('[SET-PASSWORD] ✅ Senha atualizada com sucesso. Redirecionando para o Dashboard...');
       toast.success("Senha definida com sucesso!");
-      navigate("/");
+      
+      // Pequeno delay para o toast aparecer antes da navegação
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     } catch (error: any) {
+      console.error('[SET-PASSWORD] 💥 Erro catastrófico no handleSubmit:', error);
       toast.error(error.message || "Erro ao definir senha");
-    } finally {
       setLoading(false);
     }
+    // Removido setLoading(false) do finally para evitar piscar o botão se o redirect demorar
   };
 
   if (validating) {

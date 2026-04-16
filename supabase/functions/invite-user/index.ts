@@ -48,7 +48,9 @@ const handler = async (req: Request) => {
         redirectTo: `${appUrl}/set-password`,
         data: { 
           nome: nome,
-          role: role
+          role: role,
+          organization_id: organization_id,
+          organization_name: origin?.includes('lyb') ? 'LYB Estética' : 'Lumina Control'
         }
       }
     );

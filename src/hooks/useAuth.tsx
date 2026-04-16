@@ -98,35 +98,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         console.error("[AUTH] Erro ao buscar roles:", rolesError);
       }
 
-      // Buscar e-mail do usuário autenticado para validação de Super Admin
+      // Buscar e-mail e metadados do usuário autenticado para fallback
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userEmail = authUser?.email;
+      const metadata = authUser?.user_metadata || {};
 
       // Verificar se é admin (tem role 'adm' ou 'gestora')
       const userRoles = roles?.map(r => r.role) || [];
-      const isOwnerOrStaff = userRoles.includes('adm') || userRoles.includes('gestora');
+      const isOwnerOrStaff = userRoles.includes('adm') || userRoles.includes('gestora') || metadata.role === 'gestora' || metadata.role === 'adm';
       const superAdminStatus = userEmail === 'admin@god.com';
       const adminStatus = isOwnerOrStaff || superAdminStatus;
 
       setIsAdmin(adminStatus);
       setIsSuperAdmin(superAdminStatus);
-      setAdminData(profile || (superAdminStatus ? { nome: 'Super Admin', email: userEmail } : null));
-      setOrganizationId(profile?.organization_id || null);
+      setAdminData(profile || (superAdminStatus ? { nome: 'Super Admin', email: userEmail } : (metadata.nome ? { nome: metadata.nome, email: userEmail } : null)));
+      
+      // PRIORIDADE: Perfil do Banco > Metadados do JWT (Fallback imediato)
+      const finalOrgId = profile?.organization_id || metadata.organization_id || null;
+      setOrganizationId(finalOrgId);
 
-      let orgName = null;
-      // Buscar nome da organização se houver ID
-      if (profile?.organization_id) {
+      let orgName = metadata.organization_name || null;
+      // Buscar nome da organização se houver ID e não estiver nos metadados
+      if (finalOrgId && !orgName) {
         const { data: org } = await supabase
           .from('organizations')
           .select('name')
-          .eq('id', profile.organization_id)
+          .eq('id', finalOrgId)
           .single();
         
         if (org) {
           orgName = org.name;
-          setOrganizationName(orgName);
         }
       }
+      setOrganizationName(orgName);
 
       // Salvar no cache
       const cacheData = {

@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("[AUTH] Verificando status de admin para usuário:", userId);
       
       // Verificar cache atualizado
-      const cacheKey = `auth_admin_v11_${userId}`;
+      const cacheKey = `auth_admin_v12_${userId}`;
       const cachedAuth = localStorage.getItem(cacheKey);
       const metadata = session?.user.user_metadata || {};
       

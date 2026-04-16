@@ -189,11 +189,13 @@ export const Dashboard = ({ onBack, onLogout }: DashboardProps = {}) => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
+      <div className="bg-[#FAFAFA] text-[#1A1F2C] p-6 border-b border-[#E5E7EB] shadow-sm mb-6">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div>
-            <h1 className="text-2xl font-bold">📊 Dashboard</h1>
-            <p className="text-sm opacity-90">Visão geral do sistema</p>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <span className="text-3xl">📊</span> Dashboard
+            </h1>
+            <p className="text-sm text-[#4B5563] font-medium">Visão geral do sistema</p>
           </div>
           <div className="flex gap-2">
             {onBack && (

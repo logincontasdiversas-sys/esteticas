@@ -60,25 +60,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsCheckingAdmin(true);
       console.log("[AUTH] Verificando status de admin para usuário:", userId);
       
-      // Verificar cache primeiro
-      const cacheKey = `admin_${userId}`;
-      const cachedAuth = localStorage.getItem(`auth_cache_${userId}`);
+      // Verificar cache atualizado
+      const cacheKey = `auth_admin_v11_${userId}`;
+      const cachedAuth = localStorage.getItem(cacheKey);
       const metadata = session?.user.user_metadata || {};
       
-      // Omega Stability v8.0: Ignorar cache se ele estiver vazio/incompleto mas o metadado tiver a organização
       if (cachedAuth && !forceRefresh) {
         const parsed = JSON.parse(cachedAuth);
-        if (parsed.organizationId || !metadata.organization_id) {
-          console.log("[AUTH] Usando dados do cache:", parsed);
-          setIsAdmin(parsed.isAdmin);
-          setIsSuperAdmin(parsed.isSuperAdmin);
-          setAdminData(parsed.adminData);
-          setOrganizationId(parsed.organizationId);
-          setOrganizationName(parsed.organizationName);
-          setIsCheckingAdmin(false);
-          return;
-        }
-        console.log("[AUTH] Cache detectado mas incompleto. Revalidando com metadados...");
+        console.log("[AUTH] Usando dados do cache v11:", parsed);
+        setIsAdmin(parsed.isAdmin);
+        setIsSuperAdmin(parsed.isSuperAdmin);
+        setAdminData(parsed.adminData);
+        setOrganizationId(parsed.organizationId);
+        setOrganizationName(parsed.organizationName);
+        setIsCheckingAdmin(false);
+        return;
       }
 
       console.log("[AUTH] Buscando dados do Supabase...");

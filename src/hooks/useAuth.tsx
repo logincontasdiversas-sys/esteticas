@@ -111,19 +111,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       // Verificar se é admin (tem role 'adm' ou 'gestora')
       const userRoles = roles?.map(r => r.role) || [];
-      const isOwnerOrStaff = userRoles.includes('adm') || userRoles.includes('gestora') || metadata.role === 'gestora' || metadata.role === 'adm';
+      const isOwnerOrStaff = userRoles.includes('adm') || userRoles.includes('gestora') || userMetadata.role === 'gestora' || userMetadata.role === 'adm';
       const superAdminStatus = userEmail === 'admin@god.com';
       const adminStatus = isOwnerOrStaff || superAdminStatus;
 
       setIsAdmin(adminStatus);
       setIsSuperAdmin(superAdminStatus);
-      setAdminData(profile || (superAdminStatus ? { nome: 'Super Admin', email: userEmail } : (metadata.nome ? { nome: metadata.nome, email: userEmail } : null)));
+      setAdminData(profile || (superAdminStatus ? { nome: 'Super Admin', email: userEmail } : (userMetadata.nome ? { nome: userMetadata.nome, email: userEmail } : null)));
       
       // PRIORIDADE: Perfil do Banco > Metadados do JWT (Fallback imediato)
-      const finalOrgId = profile?.organization_id || metadata.organization_id || null;
+      const finalOrgId = profile?.organization_id || userMetadata.organization_id || null;
       setOrganizationId(finalOrgId);
 
-      let orgName = metadata.organization_name || null;
+      let orgName = userMetadata.organization_name || null;
       // Buscar nome da organização se houver ID e não estiver nos metadados
       if (finalOrgId && !orgName) {
         const { data: org } = await supabase

@@ -180,7 +180,7 @@ export const createUserWithRole = async (
   organizationName?: string | null
 ) => {
   if (!organizationId) throw new Error("ID da organização é obrigatório para convidar usuários");
-  // ONLY use Edge Function - no fallback to avoid admin logout
+  try {
     const payload = { 
       email, 
       nome, 
@@ -214,14 +214,14 @@ export const createUserWithRole = async (
     }
     
     console.log('✅ Convite enviado via Edge Function');
-    return { data: data.user, error: null };
-  } catch (error) {
+    return { data: rawData?.user || null, error: null };
+  } catch (error: any) {
     console.error('Erro na Edge Function:', error);
     console.log('❌ Edge Function obrigatória para convites!');
     
     return { 
       data: null, 
-      error: new Error('Edge Function obrigatória para convites. Configure no Supabase Dashboard.') 
+      error: new Error(error.message || 'Edge Function obrigatória para convites.') 
     };
   }
 };

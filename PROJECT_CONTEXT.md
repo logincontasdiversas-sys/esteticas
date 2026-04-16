@@ -31,3 +31,8 @@ Eliminar a complexidade na gestão financeira de micro e pequenas empresas do se
 
 # DIREÇÃO
 Evoluir para um sistema de gestão 360º, incluindo agendamentos inteligentes e automação de marketing para as clientes finais das clínicas.
+
+# LIMITAÇÕES CONHECIDAS
+- **Dependência crítica de organization_id**: O sistema não funciona sem este identificador.
+- **Inconsistência de First Login**: O Supabase Auth pode gerar inconsistência no primeiro login se os metadados demorarem a propagar.
+- **Idempotência**: As Edge Functions precisam ser tratadas como idempotentes para evitar duplicação de perfis em caso de reintentos.

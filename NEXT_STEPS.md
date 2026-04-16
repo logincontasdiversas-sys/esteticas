@@ -1,3 +1,7 @@
+# ESTADO ATUAL
+Sistema funcional, porém com instabilidades no fluxo de convite.
+Bloqueio principal: sincronização Auth ↔ Database.
+
 # PRÓXIMOS PASSOS (ESTABILIZAÇÃO)
 
 ## Prioridade 0: Autenticação & Convites

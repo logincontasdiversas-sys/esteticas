@@ -127,9 +127,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       let orgName = null;
       let detectedOrgId = finalOrgId;
       
-      // PRIORIDADE 1: Tentar buscar pelo ID detectado no perfil ou metadados
-      if (detectedOrgId) {
-        console.log("[AUTH] Tentando busca por ID no Banco:", detectedOrgId);
+      // PRIORIDADE 1: Tentar buscar via Join com o Perfil (mais robusto contra RLS)
+      if (userId) {
+        console.log("[AUTH] Tentando busca via JOIN Profile-Org para User:", userId);
+        const { data: profileWithOrg } = await supabase
+          .from('profiles')
+          .select(`
+            organization_id,
+            organizations (
+              name
+            )
+          `)
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (profileWithOrg?.organizations) {
+          const joinedName = (profileWithOrg.organizations as any).name;
+          if (joinedName) {
+            orgName = joinedName;
+            detectedOrgId = profileWithOrg.organization_id;
+            console.log("[AUTH] ✅ Nome encontrado via JOIN:", orgName);
+          }
+        }
+      }
+
+      // Se o JOIN falhou, tentar a busca direta anterior como plano B
+      if (!orgName && detectedOrgId) {
+        console.log("[AUTH] JOIN falhou, tentando busca DIRETA por ID:", detectedOrgId);
         const { data: org } = await supabase
           .from('organizations')
           .select('name')
@@ -138,7 +162,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         if (org) {
           orgName = org.name;
-          console.log("[AUTH] Nome encontrado via ID:", orgName);
+          console.log("[AUTH] Nome encontrado via busca direta:", orgName);
         }
       }
 

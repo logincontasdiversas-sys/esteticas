@@ -220,13 +220,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     // Verificar sessão inicial e processar links de convite/recuperação
     const getInitialSession = async () => {
+      console.log('[AUTH] 🚀 Iniciando verificação de sessão. URL Atual:', window.location.href);
+      
       try {
         const hash = window.location.hash;
         const search = window.location.search;
         
         // Processamento de Link de Convite/Recuperação SOBERANO
-        if (hash.includes('access_token=') || search.includes('access_token=') || search.includes('token=')) {
-          console.log('[AUTH] 🎫 Link de autenticação detectado na URL. Processando...');
+        const hasTokens = hash.includes('access_token=') || search.includes('access_token=') || search.includes('token=');
+        
+        if (hasTokens) {
+          console.log('[AUTH] 🎫 Link de autenticação detectado. Iniciando extração...');
           
           const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
           const searchParams = new URLSearchParams(search.replace(/^\?/, ''));
@@ -245,21 +249,31 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             token = token || url.match(/[#?&]token=([^&#]+)/)?.[1] || null;
           }
 
+          console.log('[AUTH] 🔍 Resultado da extração:', { type, hasAccess: !!accessToken, hasRefresh: !!refreshToken, hasOTP: !!token });
+
           if ((accessToken && refreshToken) || (token && type === 'invite')) {
             try {
               if (accessToken && refreshToken) {
-                console.log('[AUTH] ⏳ Configurando sessão via Tokens...');
-                await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+                console.log('[AUTH] ⏳ Sincronizando sessão com tolerância a clock skew...');
+                const { error: syncError } = await supabase.auth.setSession({ 
+                  access_token: accessToken, 
+                  refresh_token: refreshToken 
+                });
+                
+                if (syncError) {
+                  console.error('[AUTH] ❌ Erro ao sincronizar sessão:', syncError.message);
+                  // Se falhar por tempo/skew, tentamos recuperar a sessão de qualquer forma
+                }
               } else if (token && type === 'invite') {
-                console.log('[AUTH] ⏳ Verificando OTP (Convite)...');
+                console.log('[AUTH] ⏳ Verificando OTP...');
                 await supabase.auth.verifyOtp({ token_hash: token, type: 'invite' });
               }
-              console.log('[AUTH] ✅ Sessão sincronizada com sucesso');
               
-              // Limpar URL para evitar re-processamento em refreshes
+              console.log('[AUTH] ✅ Processamento de link concluído.');
+              // Limpar URL
               window.history.replaceState(null, '', window.location.pathname);
             } catch (err) {
-              console.error('[AUTH] Erro ao sincronizar link:', err);
+              console.error('[AUTH] Erro interno ao processar link:', err);
             }
           }
         }

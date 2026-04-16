@@ -245,7 +245,11 @@ export const GlobalDataProvider = ({ children }: { children: ReactNode }) => {
         .subscribe();
 
     } else {
-      console.log('[GLOBAL DATA] Sem usuário, limpando estado');
+      console.log('[GLOBAL DATA] Fluxo de dados suspenso:', { 
+        hasUser: !!user, 
+        hasOrg: !!organizationId,
+        reason: !user ? 'Sem sessão ativa' : 'Usuário sem organização vinculada'
+      });
       setLancamentos([]);
       setProfissionais([]);
       setFluxoCaixa(null);

@@ -59,59 +59,67 @@ const SetPassword = () => {
           console.log('[SET-PASSWORD] Type:', type, 'Tokens presentes:', !!accessToken, !!refreshToken);
           
           if ((type === 'recovery' || type === 'signup' || type === 'invite') && accessToken && refreshToken) {
-            console.log('[SET-PASSWORD] Configurando sessão do magic link...');
-            const { error: sessionError } = await supabase.auth.setSession({
+            console.log('[SET-PASSWORD] ⏳ Iniciando configuração de sessão (com timeout)...');
+            
+            // Timeout Soberano: Se o SDK não responder em 3s, seguimos em frente
+            const timeoutPromise = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('TIMEOUT_SDK')), 3000)
+            );
+
+            const sessionPromise = supabase.auth.setSession({
               access_token: accessToken,
               refresh_token: refreshToken
             });
-            
-            if (sessionError) {
-              console.error('[SET-PASSWORD] Erro ao configurar sessão:', sessionError);
-              toast.error("Link inválido ou expirado");
-              navigate("/auth");
-              return;
+
+            try {
+              await Promise.race([sessionPromise, timeoutPromise]);
+              console.log('[SET-PASSWORD] ✅ Sessão configurada com sucesso via SDK');
+            } catch (err: any) {
+              if (err.message === 'TIMEOUT_SDK') {
+                console.warn('[SET-PASSWORD] ⚠️ Timeout no setSession atingido. Forçando continuação...');
+              } else {
+                console.error('[SET-PASSWORD] ❌ Erro ao configurar sessão:', err);
+              }
             }
             
-            console.log('[SET-PASSWORD] Sessão configurada com sucesso');
-            // Limpar hash da URL
+            // Limpar hash da URL independente do resultado para evitar loops
             window.history.replaceState(null, '', window.location.pathname);
           }
         }
         
         // Agora verificar se tem sessão válida
-        console.log('[SET-PASSWORD] Buscando sessão atual do SDK...');
+        console.log('[SET-PASSWORD] 🔍 Verificando estado final da sessão...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('[SET-PASSWORD] Erro ao buscar sessão:', error);
+          console.error('[SET-PASSWORD] ❌ Erro ao buscar sessão final:', error);
           toast.error("Erro ao verificar sessão");
           navigate("/auth");
           return;
         }
         
         if (!session) {
-          console.log('[SET-PASSWORD] Nenhuma sessão encontrada após configuração');
-          // Tentar um pequeno delay (alguns ambientes demoram a instanciar a sessão)
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          console.log('[SET-PASSWORD] ⚠️ Nenhuma sessão encontrada após configuração. Tentativa de recuperação...');
+          await new Promise(resolve => setTimeout(resolve, 800));
           const { data: { session: retrySession } } = await supabase.auth.getSession();
           
           if (!retrySession) {
-            console.error('[SET-PASSWORD] Sem sessão válida após tentativa');
+            console.error('[SET-PASSWORD] 💀 Falha crítica: Link inválido ou expirado.');
             toast.error("Acesso não autorizado ou link expirado.");
             navigate("/auth");
             return;
           }
-          console.log('[SET-PASSWORD] Sessão encontrada na segunda tentativa:', retrySession.user.email);
+          console.log('[SET-PASSWORD] 💎 Sessão recuperada:', retrySession.user.email);
         } else {
-          console.log('[SET-PASSWORD] Sessão encontrada de primeira:', session.user.email);
+          console.log('[SET-PASSWORD] ✨ Sessão ativa:', session.user.email);
         }
         
-        console.log('[SET-PASSWORD] ✅ Validação concluída, liberando formulário');
+        console.log('[SET-PASSWORD] 🔓 Liberando formulário de senha');
         setValidating(false);
       } catch (error: any) {
-        console.error('[SET-PASSWORD] ❌ Erro fatal no checkSession:', error);
+        console.error('[SET-PASSWORD] 💥 Erro catastrófico:', error);
         toast.error("Erro ao validar acesso");
-        setValidating(false); // Liberar mesmo com erro para não travar o usuário
+        setValidating(false); // Failsafe: nunca deixar o usuário preso no spinner
       }
     };
     

@@ -125,29 +125,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setOrganizationId(finalOrgId);
 
       let orgName = null;
+      let detectedOrgId = finalOrgId;
       
-      // PRIORIDADE: Tentar buscar o nome real no banco de dados primeiro para ser sempre o mais atualizado
-      if (finalOrgId) {
-        console.log("[AUTH] Buscando nome da organização no Banco para ID:", finalOrgId);
+      // PRIORIDADE 1: Tentar buscar pelo ID detectado no perfil ou metadados
+      if (detectedOrgId) {
+        console.log("[AUTH] Tentando busca por ID no Banco:", detectedOrgId);
         const { data: org } = await supabase
           .from('organizations')
           .select('name')
-          .eq('id', finalOrgId)
+          .eq('id', detectedOrgId)
           .maybeSingle();
         
         if (org) {
           orgName = org.name;
-          console.log("[AUTH] Nome da organização encontrado no Banco:", orgName);
+          console.log("[AUTH] Nome encontrado via ID:", orgName);
         }
       }
 
-      // FALLBACK: Se não encontrou no banco, tenta metadados
-      if (!orgName) {
-        orgName = userMetadata.organization_name || null;
-        if (orgName) console.log("[AUTH] Usando nome da organização dos metadados (fallback):", orgName);
+      // PRIORIDADE 2: Fallback Soberano - Se não tem ID ou não achou nome, buscar por e-mail do proprietário
+      if (!orgName && userEmail) {
+        console.log("[AUTH] Fallback: Buscando organização por e-mail do dono:", userEmail);
+        const { data: orgByEmail } = await supabase
+          .from('organizations')
+          .select('id, name')
+          .eq('owner_email', userEmail)
+          .maybeSingle();
+        
+        if (orgByEmail) {
+          orgName = orgByEmail.name;
+          detectedOrgId = orgByEmail.id;
+          setOrganizationId(detectedOrgId); // Atualiza o ID também
+          console.log("[AUTH] Nome e ID encontrados via e-mail do dono:", orgName);
+        }
       }
 
-      setOrganizationName(orgName);
+      // FALLBACK FINAL: Metadados originais
+      if (!orgName) {
+        orgName = userMetadata.organization_name || null;
+        if (orgName) console.log("[AUTH] Usando nome dos metadados (fallback final):", orgName);
+      }
+
+      setOrganizationName(orgName || "Lumina Control");
 
       // Salvar no cache
       const cacheData = {

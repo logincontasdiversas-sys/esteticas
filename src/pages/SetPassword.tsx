@@ -79,6 +79,7 @@ const SetPassword = () => {
         }
         
         // Agora verificar se tem sessão válida
+        console.log('[SET-PASSWORD] Buscando sessão atual do SDK...');
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -89,18 +90,28 @@ const SetPassword = () => {
         }
         
         if (!session) {
-          console.error('[SET-PASSWORD] Sem sessão válida');
-          toast.error("Acesso não autorizado. Use o link enviado por email.");
-          navigate("/auth");
-          return;
+          console.log('[SET-PASSWORD] Nenhuma sessão encontrada após configuração');
+          // Tentar um pequeno delay (alguns ambientes demoram a instanciar a sessão)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          const { data: { session: retrySession } } = await supabase.auth.getSession();
+          
+          if (!retrySession) {
+            console.error('[SET-PASSWORD] Sem sessão válida após tentativa');
+            toast.error("Acesso não autorizado ou link expirado.");
+            navigate("/auth");
+            return;
+          }
+          console.log('[SET-PASSWORD] Sessão encontrada na segunda tentativa:', retrySession.user.email);
+        } else {
+          console.log('[SET-PASSWORD] Sessão encontrada de primeira:', session.user.email);
         }
         
-        console.log('[SET-PASSWORD] Sessão encontrada:', session.user.email);
+        console.log('[SET-PASSWORD] ✅ Validação concluída, liberando formulário');
         setValidating(false);
       } catch (error: any) {
-        console.error('[SET-PASSWORD] Erro:', error);
+        console.error('[SET-PASSWORD] ❌ Erro fatal no checkSession:', error);
         toast.error("Erro ao validar acesso");
-        navigate("/auth");
+        setValidating(false); // Liberar mesmo com erro para não travar o usuário
       }
     };
     

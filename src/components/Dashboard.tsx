@@ -201,15 +201,6 @@ export const Dashboard = ({ onBack, onLogout }: DashboardProps = {}) => {
                 ← Voltar
               </Button>
             )}
-            {isAdmin && (
-              <Button 
-                variant="outline" 
-                className="bg-white/10 hover:bg-white/20 border-white/20 text-white"
-                onClick={() => navigate('/admin')}
-              >
-                ⚙️ Administração
-              </Button>
-            )}
             {onLogout && (
               <Button variant="destructive" onClick={onLogout}>
                 Sair

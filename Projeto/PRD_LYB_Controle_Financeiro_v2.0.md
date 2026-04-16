@@ -137,13 +137,11 @@ Sistema de controle financeiro completo para a Estética LYB, desenvolvido com R
 - updated_at: TIMESTAMP
 ```
 
-**✅ ARQUITETURA MULTI-USUÁRIOS - TABELA COMPARTILHADA:**
-- **UMA ÚNICA TABELA** `lancamentos` para TODOS os usuários
-- **TABELA COMPARTILHADA** - Todos veem os lançamentos uns dos outros
-- **SEM ISOLAMENTO** - Dados visíveis para todos os usuários
-- **COLABORAÇÃO TOTAL** - Usuários veem lançamentos de outros usuários
-- **RASTREABILIDADE** - Quem registrou cada lançamento
-- **CENTRALIZAÇÃO TOTAL** - Um app, uma base de dados compartilhada
+**✅ ARQUITETURA MULTI-TENANT SOBERANA:**
+- **ISOLAMENTO POR ORGANIZAÇÃO**: Cada clínica/empresa possui seu próprio `organization_id`.
+- **DADOS ISOLADOS**: Um usuário da Organização A nunca vê dados da Organização B (garantido por RLS).
+- **COLABORAÇÃO INTERNA**: Dentro de uma mesma organização, os lançamentos podem ser compartilhados entre gestoras e administradoras.
+- **RASTREABILIDADE**: Identificação obrigatória de quem registrou cada movimento.
 
 #### **5. profissionais**
 ```sql
@@ -178,13 +176,11 @@ Sistema de controle financeiro completo para a Estética LYB, desenvolvido com R
 
 ## 🔐 **SEGURANÇA E PERMISSÕES**
 
-### **Arquitetura Multi-Usuários**
-- ✅ **UMA ÚNICA APLICAÇÃO** - Centralizada para todos os usuários
-- ✅ **UMA ÚNICA BASE DE DADOS** - Compartilhada entre usuários
-- ✅ **DADOS CENTRALIZADOS** - Todos veem os mesmos lançamentos
-- ✅ **RASTREABILIDADE** - Quem registrou cada lançamento
-- ✅ **SEM ISOLAMENTO** - Dados compartilhados entre usuários
-- ✅ **COLABORAÇÃO** - Múltiplos usuários trabalhando juntos
+### **Arquitetura Multi-Tenant**
+- ✅ **ISOLAMENTO SOBERANO** - Separação lógica total por `organization_id`.
+- ✅ **COLABORAÇÃO CONTROLADA** - Dados compartilhados apenas entre membros da mesma organização.
+- ✅ **RASTREABILIDADE COMPLETA** - Registro de autor e organização em cada linha.
+- ✅ **RLS CRÍTICO** - Segurança em nível de banco de dados para evitar vazamento de dados entre empresas.
 
 ### **Row Level Security (RLS)**
 - ✅ **Políticas de acesso** - Baseadas em roles

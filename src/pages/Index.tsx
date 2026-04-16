@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, isSuperAdmin, loading: authLoading } = useAuth();
+  const { user, signOut, isAdmin, isSuperAdmin, organizationName, loading: authLoading } = useAuth();
 
   // Redirecionar para login se não estiver autenticado
   useEffect(() => {
@@ -27,31 +27,44 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div>
-            <h1 className="text-2xl font-bold">✨ Lumina Control</h1>
-            <p className="text-sm opacity-90">
-              Gestão Financeira para Estética e Bem-estar
+      <div className="bg-primary text-primary-foreground p-4 shadow-md">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">✨ Lumina Control</h1>
+            <p className="text-xs opacity-80">
+              Gestão Financeira
             </p>
+          </div>
+
+          <div className="flex-1 text-center">
+            {organizationName ? (
+              <h2 className="text-2xl font-black uppercase tracking-widest text-white animate-pulse">
+                🏛️ {organizationName}
+              </h2>
+            ) : (
+              <h2 className="text-lg font-medium opacity-50 italic">
+                Aguardando Organização...
+              </h2>
+            )}
             {user && (
-              <p className="text-xs opacity-75 mt-1">
-                👤 Logado como: {user.email}
+              <p className="text-xs opacity-75 mt-1 font-mono">
+                {user.email}
               </p>
             )}
           </div>
-          <div className="flex gap-2">
+
+          <div className="flex-1 flex justify-end gap-2">
             {isSuperAdmin && (
-              <Button variant="outline" className="bg-slate-900 border-indigo-500/50 text-indigo-400 hover:bg-slate-800" onClick={() => navigate('/god-mode')}>
+              <Button variant="outline" size="sm" className="bg-slate-900 border-indigo-500/50 text-indigo-400 hover:bg-slate-800" onClick={() => navigate('/god-mode')}>
                 🛠️ Modo Deus
               </Button>
             )}
             {isAdmin && (
-              <Button variant="secondary" onClick={() => navigate('/admin')}>
+              <Button variant="secondary" size="sm" onClick={() => navigate('/admin')}>
                 ⚙️ Admin
               </Button>
             )}
-            <Button variant="destructive" onClick={handleSignOut}>
+            <Button variant="destructive" size="sm" onClick={handleSignOut}>
               Sair
             </Button>
           </div>

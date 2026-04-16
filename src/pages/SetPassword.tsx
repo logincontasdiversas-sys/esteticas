@@ -101,28 +101,42 @@ const SetPassword = () => {
       return;
     }
 
-    // Real Supabase implementation
+    // Detecção Ultra-Resiliente
     try {
-      console.log('[SET-PASSWORD] ⏳ Iniciando atualização de senha no Supabase...');
-      const { error } = await supabase.auth.updateUser({
+      console.log('[SET-PASSWORD] ⏳ Aguardando 1.5s para estabilizar sessão antes de atualizar...');
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log('[SET-PASSWORD] 🛰️ Disparando updateUser no Supabase...');
+      
+      // Criar uma promessa com timeout de 15 segundos
+      const updatePromise = supabase.auth.updateUser({
         password: password
       });
+
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("O servidor demorou muito para responder (Timeout). Tente atualizar a página.")), 15000)
+      );
+
+      const { data, error } = await Promise.race([updatePromise, timeoutPromise]) as any;
  
       if (error) {
-        console.error('[SET-PASSWORD] ❌ Erro ao atualizar senha:', error.message);
+        console.error('[SET-PASSWORD] ❌ Erro retornado pelo Supabase:', error.message);
         throw error;
       }
  
-      console.log('[SET-PASSWORD] ✅ Senha atualizada com sucesso. Redirecionando para o Dashboard...');
+      console.log('[SET-PASSWORD] ✅ Senha atualizada com sucesso!', data);
       toast.success("Senha definida com sucesso!");
       
-      // Pequeno delay para o toast aparecer antes da navegação
+      // Limpar cache de autenticação para forçar recarregamento do perfil com a nova senha
+      localStorage.removeItem(`admin_${user?.id}`);
+      
       setTimeout(() => {
+        console.log('[SET-PASSWORD] 🚀 Navegando para a Home...');
         navigate("/");
-      }, 1000);
+      }, 1500);
     } catch (error: any) {
-      console.error('[SET-PASSWORD] 💥 Erro catastrófico no handleSubmit:', error);
-      toast.error(error.message || "Erro ao definir senha");
+      console.error('[SET-PASSWORD] 💥 Falha na submissão:', error.message);
+      toast.error(error.message || "Erro ao definir senha. Verifique sua conexão.");
       setLoading(false);
     }
     // Removido setLoading(false) do finally para evitar piscar o botão se o redirect demorar

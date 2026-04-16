@@ -24,3 +24,9 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Project Documentation (Local Only)
+PROJECT_CONTEXT.md
+RULES.md
+NEXT_STEPS.md
+DECISIONS.md

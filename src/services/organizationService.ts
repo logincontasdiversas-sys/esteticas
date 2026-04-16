@@ -12,17 +12,28 @@ export interface Organization {
   name: string;
   slug: string;
   created_at: string;
+  owner_name?: string;
+  owner_email?: string;
 }
 
 /**
  * Get all organizations (Super Admin view)
  */
 export const getOrganizations = async () => {
-  console.log('🔄 [organizationService] Carregando todas as organizações...');
+  console.log('🔄 [organizationService] Carregando todas as organizações com detalhes de donos...');
   try {
+    // Buscamos as organizações e tentamos trazer os perfis vinculados
+    // Filtragem de 'gestora' será feita via código para garantir que todas as orgs apareçam
     const { data, error } = await supabase
       .from('organizations')
-      .select('*')
+      .select(`
+        *,
+        profiles (
+          nome,
+          email,
+          role
+        )
+      `)
       .order('name');
     
     if (error) {
@@ -30,7 +41,20 @@ export const getOrganizations = async () => {
       return { data: null, error };
     }
     
-    return { data: data as Organization[], error: null };
+    // Processar dados para extrair o dono (primeira gestora encontrada)
+    const processedData: Organization[] = (data || []).map((org: any) => {
+      const owner = org.profiles?.find((p: any) => p.role === 'gestora');
+      return {
+        id: org.id,
+        name: org.name,
+        slug: org.slug,
+        created_at: org.created_at,
+        owner_name: owner?.nome,
+        owner_email: owner?.email
+      };
+    });
+    
+    return { data: processedData, error: null };
   } catch (error) {
     console.error('❌ [organizationService] Erro crítico:', error);
     return { data: null, error: error instanceof Error ? error : new Error('Erro desconhecido') };

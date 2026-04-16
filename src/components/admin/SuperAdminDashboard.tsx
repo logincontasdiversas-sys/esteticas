@@ -264,8 +264,8 @@ export const SuperAdminDashboard = () => {
             <TableHeader className="bg-black/60">
               <TableRow className="border-white/10 hover:bg-transparent">
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Organização</TableHead>
-                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Slug / Namespace</TableHead>
-                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">ID Identificador</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Nome do Empresário</TableHead>
+                <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Email</TableHead>
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Data de Criação</TableHead>
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px]">Status</TableHead>
                 <TableHead className="text-indigo-300 font-bold uppercase tracking-widest text-[10px] text-right">Ações</TableHead>
@@ -278,13 +278,19 @@ export const SuperAdminDashboard = () => {
                     <Building2 className="w-4 h-4 text-indigo-400 group-hover:scale-110 transition-transform" />
                     {org.name}
                   </TableCell>
-                  <TableCell className="font-mono text-[10px] text-slate-300 font-bold">{org.slug}</TableCell>
-                  <TableCell className="font-mono text-[10px] text-slate-400">{org.id}</TableCell>
+                  <TableCell className="text-sm text-slate-200">
+                    {org.owner_name || <span className="text-slate-500 italic text-xs">Aguardando convite...</span>}
+                  </TableCell>
+                  <TableCell className="text-xs text-indigo-400 font-mono">
+                    {org.owner_email || <span className="text-slate-600">-</span>}
+                  </TableCell>
                   <TableCell className="text-xs text-slate-200 font-medium">
                     {new Date(org.created_at).toLocaleDateString('pt-BR')}
                   </TableCell>
                   <TableCell>
-                    <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30 px-3 py-1">Ativa</Badge>
+                    <Badge className={`${org.owner_name ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' : 'bg-amber-500/20 text-amber-300 border-amber-500/30'} px-3 py-1`}>
+                      {org.owner_name ? 'Ativa' : 'Pendente'}
+                    </Badge>
                   </TableCell>
                   <TableCell className="text-right">
                     <AlertDialog>

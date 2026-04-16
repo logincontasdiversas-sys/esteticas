@@ -54,61 +54,75 @@ const SetPassword = () => {
       const search = window.location.search;
       
       if (!hash && !search) {
+        console.log('[SET-PASSWORD] ℹ️ URL limpa, aguardando auth global...');
         setHashProcessed(true);
         return;
       }
 
-      console.log('[SET-PASSWORD] 🎫 Processando link de convite...');
+      console.log('[SET-PASSWORD] 🎫 Processando URL de convite...');
       
-      // Combinar as strings para busca única
-      const fullParams = hash + '&' + search;
-      const params = new URLSearchParams(fullParams.replace(/^[#?]/, ''));
+      // Extrair parâmetros de forma independente
+      const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+      const searchParams = new URLSearchParams(search.replace(/^\?/, ''));
       
-      let accessToken = params.get('access_token');
-      let refreshToken = params.get('refresh_token');
-      let type = params.get('type');
+      // Tentar capturar de qualquer uma das fontes
+      let accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+      let refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+      let type = hashParams.get('type') || searchParams.get('type');
+      let token = hashParams.get('token') || searchParams.get('token'); // Fallback para OTP simple token
 
-      // Fallback para Regex se URLSearchParams falhar (em strings complexas ou múltiplas marcas)
-      if (!accessToken || !refreshToken || !type) {
-        const fullRaw = window.location.href;
-        accessToken = accessToken || fullRaw.match(/[#?&]access_token=([^&]+)/)?.[1] || null;
-        refreshToken = refreshToken || fullRaw.match(/[#?&]refresh_token=([^&]+)/)?.[1] || null;
-        type = type || fullRaw.match(/[#?&]type=([^&]+)/)?.[1] || null;
+      // Fallback agressivo para Regex (procura em toda a URL)
+      if (!accessToken || !refreshToken) {
+        const url = window.location.href;
+        accessToken = accessToken || url.match(/[#?&]access_token=([^&#]+)/)?.[1] || null;
+        refreshToken = refreshToken || url.match(/[#?&]refresh_token=([^&#]+)/)?.[1] || null;
+        type = type || url.match(/[#?&]type=([^&#]+)/)?.[1] || null;
+        token = token || url.match(/[#?&]token=([^&#]+)/)?.[1] || null;
       }
 
-      console.log('[SET-PASSWORD] 🔍 Análise da URL:', { 
+      console.log('[SET-PASSWORD] 🔍 Diagnóstico de URL:', { 
         type, 
         hasAccess: !!accessToken, 
         hasRefresh: !!refreshToken,
-        foundIn: hash ? 'hash' : 'search'
+        hasOTP: !!token
       });
 
-      if (accessToken && refreshToken) {
+      if ((accessToken && refreshToken) || token) {
         try {
-          console.log('[SET-PASSWORD] ⏳ Sincronizando sessão com o servidor...');
-          const { error } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
+          console.log('[SET-PASSWORD] ⏳ Sincronizando sessão com Supabase...');
           
-          if (error) {
-            console.error('[SET-PASSWORD] ❌ Erro do Supabase:', error.message);
+          let result;
+          if (accessToken && refreshToken) {
+            result = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken
+            });
+          } else if (token && type === 'invite') {
+            // Se for apenas o token de convite (signup flow)
+            result = await supabase.auth.verifyOtp({
+              token_hash: token,
+              type: 'invite'
+            });
+          }
+
+          if (result?.error) {
+            console.error('[SET-PASSWORD] ❌ Erro na sincronização:', result.error.message);
           } else {
-            console.log('[SET-PASSWORD] ✅ Sessão sincronizada com o SDK');
+            console.log('[SET-PASSWORD] ✅ Sessão estabelecida com sucesso');
           }
         } catch (err) {
-          console.error('[SET-PASSWORD] Erro fatal no setSession:', err);
+          console.error('[SET-PASSWORD] Erro fatal no processamento:', err);
         }
       } else {
-        console.warn('[SET-PASSWORD] ⚠️ Tokens não encontrados na URL atual.');
+        console.warn('[SET-PASSWORD] ⚠️ Nenhum token de autenticação detectado na URL.');
       }
 
-      // LIMPEZA OBRIGATÓRIA: Limpar a URL independente do resultado
+      // LIMPEZA OBRIGATÓRIA: Limpar a barra de endereço para segurança
       setTimeout(() => {
         window.history.replaceState(null, '', window.location.pathname);
-        console.log('[SET-PASSWORD] 🧹 URL limpa para liberar interface');
+        console.log('[SET-PASSWORD] 🧹 URL limpa');
         setHashProcessed(true);
-      }, 800);
+      }, 1000);
     };
     
     handleHash();

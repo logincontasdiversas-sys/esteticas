@@ -136,8 +136,14 @@ const SetPassword = () => {
       }, 1500);
     } catch (error: any) {
       console.error('[SET-PASSWORD] 💥 Falha na submissão:', error.message);
-      toast.error(error.message || "Erro ao definir senha. Verifique sua conexão.");
-      setLoading(false);
+      
+      if (error.message?.includes("Timeout") || error.message?.includes("session")) {
+        toast.warning("Sessão ativada, mas houve um atraso ao salvar a senha. Entrando no sistema...");
+        setTimeout(() => navigate("/"), 2000);
+      } else {
+        toast.error(error.message || "Erro ao definir senha. Verifique sua conexão.");
+        setLoading(false);
+      }
     }
     // Removido setLoading(false) do finally para evitar piscar o botão se o redirect demorar
   };

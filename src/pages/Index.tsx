@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, isSuperAdmin, organizationName, loading: authLoading } = useAuth();
+  const { user, signOut, isAdmin, isSuperAdmin, organizationName, adminData, loading: authLoading } = useAuth();
 
   // Redirecionar para login se não estiver autenticado
   useEffect(() => {
@@ -47,9 +47,14 @@ const Index = () => {
               </h2>
             )}
             {user && (
-              <p className="text-xs opacity-75 mt-1 font-mono">
-                {user.email}
-              </p>
+              <div className="mt-1">
+                <p className="text-sm font-bold text-white mb-0.5">
+                  Olá, {adminData?.nome || 'Usuário'}!
+                </p>
+                <p className="text-[10px] opacity-60 font-mono tracking-tight">
+                  {user.email}
+                </p>
+              </div>
             )}
           </div>
 

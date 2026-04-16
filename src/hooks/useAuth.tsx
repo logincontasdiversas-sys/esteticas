@@ -121,6 +121,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // PRIORIDADE: Perfil do Banco > Metadados do JWT (Fallback imediato)
       const finalOrgId = profile?.organization_id || userMetadata.organization_id || null;
+      console.log("[AUTH] Final Org Detection:", {
+        fromProfile: profile?.organization_id,
+        fromMetadata: userMetadata.organization_id,
+        finalResult: finalOrgId
+      });
       setOrganizationId(finalOrgId);
 
       let orgName = userMetadata.organization_name || null;

@@ -59,29 +59,12 @@ export const Dashboard = ({ onBack, onLogout }: DashboardProps = {}) => {
         fim = new Date().toISOString().split('T')[0];
         break;
       
-      case 'semana-passada':
-        const domingoPassado = new Date();
-        domingoPassado.setDate(domingoPassado.getDate() - domingoPassado.getDay() - 7);
-        inicio = domingoPassado.toISOString().split('T')[0];
-        const sabadoPassado = new Date(domingoPassado);
-        sabadoPassado.setDate(sabadoPassado.getDate() + 6);
-        fim = sabadoPassado.toISOString().split('T')[0];
-        break;
-      
       case 'mes-atual':
         const hojeMesAtual = new Date();
         const primeiroDiaMes = new Date(hojeMesAtual.getFullYear(), hojeMesAtual.getMonth(), 1);
         const ultimoDiaMes = new Date(hojeMesAtual.getFullYear(), hojeMesAtual.getMonth() + 1, 0);
         inicio = primeiroDiaMes.toISOString().split('T')[0];
         fim = ultimoDiaMes.toISOString().split('T')[0];
-        break;
-      
-      case 'mes-passado':
-        const hojeMesPassado = new Date();
-        const primeiroDiaMesPassado = new Date(hojeMesPassado.getFullYear(), hojeMesPassado.getMonth() - 1, 1);
-        inicio = primeiroDiaMesPassado.toISOString().split('T')[0];
-        const ultimoDiaMesPassado = new Date(hojeMesPassado.getFullYear(), hojeMesPassado.getMonth(), 0);
-        fim = ultimoDiaMesPassado.toISOString().split('T')[0];
         break;
       
       case 'vitalicio':
@@ -236,14 +219,33 @@ export const Dashboard = ({ onBack, onLogout }: DashboardProps = {}) => {
                     <SelectContent>
                       <SelectItem value="hoje">Hoje</SelectItem>
                       <SelectItem value="ontem">Ontem</SelectItem>
-                      <SelectItem value="semana-atual">Semana Atual</SelectItem>
-                      <SelectItem value="semana-passada">Semana Passada</SelectItem>
-                      <SelectItem value="mes-atual">Mês Atual</SelectItem>
-                      <SelectItem value="mes-passado">Mês Passado</SelectItem>
+                      <SelectItem value="semana-atual">Esta Semana</SelectItem>
+                      <SelectItem value="mes-atual">Este Mês</SelectItem>
                       <SelectItem value="vitalicio">Vitalício</SelectItem>
                       <SelectItem value="personalizado">Período Personalizado</SelectItem>
                     </SelectContent>
                   </Select>
+
+                  {tipoPeriodo === 'personalizado' && (
+                    <div className="flex gap-2 pt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <div className="flex-1">
+                        <input
+                          type="date"
+                          value={dataInicio}
+                          onChange={(e) => setDataInicio(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs border rounded-md focus:ring-1 focus:ring-primary outline-none"
+                        />
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="date"
+                          value={dataFim}
+                          onChange={(e) => setDataFim(e.target.value)}
+                          className="w-full px-2 py-1.5 text-xs border rounded-md focus:ring-1 focus:ring-primary outline-none"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Select de Profissional */}
@@ -300,29 +302,6 @@ export const Dashboard = ({ onBack, onLogout }: DashboardProps = {}) => {
                 </div>
               )}
 
-              {/* Mostrar campos personalizados se selecionado */}
-              {tipoPeriodo === 'personalizado' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Data Início</label>
-                    <input
-                      type="date"
-                      value={dataInicio}
-                      onChange={(e) => setDataInicio(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Data Fim</label>
-                    <input
-                      type="date"
-                      value={dataFim}
-                      onChange={(e) => setDataFim(e.target.value)}
-                      className="w-full px-3 py-2 border rounded-md"
-                    />
-                  </div>
-                </div>
-              )}
 
               {/* Botão Limpar Filtros */}
               <Button 

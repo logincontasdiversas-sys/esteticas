@@ -128,19 +128,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
       setOrganizationId(finalOrgId);
 
-      let orgName = userMetadata.organization_name || null;
-      // Buscar nome da organização se houver ID e não estiver nos metadados
-      if (finalOrgId && !orgName) {
+      let orgName = null;
+      
+      // PRIORIDADE: Tentar buscar o nome real no banco de dados primeiro para ser sempre o mais atualizado
+      if (finalOrgId) {
+        console.log("[AUTH] Buscando nome da organização no Banco para ID:", finalOrgId);
         const { data: org } = await supabase
           .from('organizations')
           .select('name')
           .eq('id', finalOrgId)
-          .single();
+          .maybeSingle();
         
         if (org) {
           orgName = org.name;
+          console.log("[AUTH] Nome da organização encontrado no Banco:", orgName);
         }
       }
+
+      // FALLBACK: Se não encontrou no banco, tenta metadados
+      if (!orgName) {
+        orgName = userMetadata.organization_name || null;
+        if (orgName) console.log("[AUTH] Usando nome da organização dos metadados (fallback):", orgName);
+      }
+
       setOrganizationName(orgName);
 
       // Salvar no cache

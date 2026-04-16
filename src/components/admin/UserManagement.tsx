@@ -23,7 +23,7 @@ import type { AppRole } from "@/types/Lancamento";
 
 export const UserManagement = () => {
   const { refreshTrigger, triggerRefresh } = useGlobalRefresh();
-  const { forceRefreshAdmin, organizationId, organizationName } = useAuth();
+  const { forceRefreshAdmin, organizationId, organizationName, isSuperAdmin } = useAuth();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -147,7 +147,7 @@ export const UserManagement = () => {
     if (!role) return 'Sem Role';
     return {
       secretaria: 'Secretária',
-      gestora: 'Gestora',
+      gestora: 'Gestor(a)',
       adm: 'Administrador',
     }[role];
   };
@@ -216,8 +216,7 @@ export const UserManagement = () => {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="secretaria">Secretária</SelectItem>
-                      <SelectItem value="gestora">Gestora</SelectItem>
-                      <SelectItem value="adm">Administrador</SelectItem>
+                      <SelectItem value="gestora">Gestor(a)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -250,57 +249,65 @@ export const UserManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell className="font-medium">{user.nome}</TableCell>
-                  <TableCell>{user.email}</TableCell>
-                  <TableCell>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      user.role === 'adm' ? 'bg-warning/20 text-warning' :
-                      user.role === 'gestora' ? 'bg-primary/20 text-primary' :
-                      'bg-muted text-muted-foreground'
-                    }`}>
-                      {getRoleLabel(user.role)}
-                    </span>
-                  </TableCell>
-                  <TableCell>{new Date(user.created_at).toLocaleDateString('pt-BR')}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(user)}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Tem certeza que deseja deletar o usuário "{user.nome}"? Esta ação não pode ser desfeita.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(user.id)}>
-                              Deletar
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {users.map((user) => {
+                const isTargetGestora = user.role === 'gestora';
+                const canEdit = isSuperAdmin || !isTargetGestora;
+
+                return (
+                  <TableRow key={user.id}>
+                    <TableCell className="font-medium">{user.nome}</TableCell>
+                    <TableCell>{user.email}</TableCell>
+                    <TableCell>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        user.role === 'gestora' ? 'bg-primary/20 text-primary' :
+                        'bg-muted text-muted-foreground'
+                      }`}>
+                        {getRoleLabel(user.role)}
+                      </span>
+                    </TableCell>
+                    <TableCell>{new Date(user.created_at).toLocaleDateString('pt-BR')}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {canEdit && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEdit(user)}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                >
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja deletar o usuário "{user.nome}"? Esta ação não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDelete(user.id)}>
+                                    Deletar
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         )}

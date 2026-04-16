@@ -257,10 +257,24 @@ export const updateUserRole = async (userId: string, newRole: AppRole | 'adm') =
     
     console.log('✅ [updateUserRole] Perfil encontrado:', profileData);
     
-    // Atualizar role na tabela user_roles
+    // Primeiro, verificar hierarquia
+    const { data: targetRoleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    const isSuperAdmin = currentUser.email === 'admin@god.com';
+    const isTargetGestora = targetRoleData?.role === 'gestora';
+
+    if (isTargetGestora && !isSuperAdmin) {
+      console.error('❌ [updateUserRole] Tentativa de alterar outro Gestor negada!');
+      return { data: null, error: { message: 'Apenas o Super Admin pode alterar perfis de Gestores.' } };
+    }
+
     console.log('🔄 [updateUserRole] Atualizando user_roles...');
     
-    // Primeiro, verificar se já existe role para este usuário
+    // Verificar se já existe role para este usuário
     const { data: existingRole } = await supabase
       .from('user_roles')
       .select('user_id')
@@ -318,13 +332,21 @@ export const deleteUser = async (userId: string) => {
     
     // Verificar se o usuário atual está logado
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    if (!currentUser) {
-      console.error('❌ Usuário não está logado');
-      return { data: null, error: new Error('Usuário não está logado') };
+    // Verificar hierarquia antes de excluir
+    const { data: targetRoleData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId)
+      .single();
+
+    const isSuperAdmin = currentUser.email === 'admin@god.com';
+    const isTargetGestora = targetRoleData?.role === 'gestora';
+
+    if (isTargetGestora && !isSuperAdmin) {
+      console.error('❌ [deleteUser] Tentativa de excluir um Gestor negada!');
+      return { data: null, error: new Error('Apenas o Super Admin pode excluir perfis de Gestores.') };
     }
-    
-    console.log('✅ Usuário atual logado:', currentUser.email);
-    
+
     // Try Edge Function first for complete deletion
     try {
       const { data, error } = await supabase.functions.invoke('delete-user', {

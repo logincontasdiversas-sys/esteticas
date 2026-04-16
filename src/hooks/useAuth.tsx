@@ -52,22 +52,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const checkAdminStatus = async (userId: string, forceRefresh = false) => {
     // Prevenir múltiplas execuções simultâneas
     if (isCheckingAdmin) {
-      console.log("[AUTH] Verificação de admin já em andamento, pulando...");
       return;
     }
 
     try {
       setIsCheckingAdmin(true);
-      console.log("[AUTH] Verificando status de admin para usuário:", userId);
-      
-      // Verificar cache atualizado
-      const cacheKey = `auth_admin_v13_${userId}`;
+      const cacheKey = `auth_admin_v15_${userId}`;
       const cachedAuth = localStorage.getItem(cacheKey);
-      const metadata = session?.user.user_metadata || {};
       
       if (cachedAuth && !forceRefresh) {
         const parsed = JSON.parse(cachedAuth);
-        console.log("[AUTH] Usando dados do cache v11:", parsed);
         setIsAdmin(parsed.isAdmin);
         setIsSuperAdmin(parsed.isSuperAdmin);
         setAdminData(parsed.adminData);
@@ -77,141 +71,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
-      console.log("[AUTH] Buscando dados do Supabase...");
-      
-      // Buscar dados do Supabase - profiles
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, nome, organization_id')
+        .select('*')
         .eq('id', userId)
-        .maybeSingle(); // Usar maybeSingle para não gerar erro 406 se não existir
+        .maybeSingle();
 
       if (profileError) {
-        console.error("[AUTH] Erro ao buscar perfil:", profileError);
+        console.error("[AUTH] Erro ao buscar perfil atômico:", profileError);
       }
 
-      // Buscar roles do usuário
-      const { data: roles, error: rolesError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId);
-
-      if (rolesError) {
-        console.error("[AUTH] Erro ao buscar roles:", rolesError);
-      }
-
-      // Buscar e-mail e metadados do usuário autenticado para fallback (reutilizando metadata já declarada)
       const { data: { user: authUser } } = await supabase.auth.getUser();
       const userEmail = authUser?.email;
-      const userMetadata = authUser?.user_metadata || metadata;
 
-      // Verificar se é admin (tem role 'adm' ou 'gestora')
-      const userRoles = roles?.map(r => r.role) || [];
-      const isOwnerOrStaff = userRoles.includes('adm') || userRoles.includes('gestora') || userMetadata.role === 'gestora' || userMetadata.role === 'adm';
       const superAdminStatus = userEmail === 'admin@god.com';
-      const adminStatus = isOwnerOrStaff || superAdminStatus;
+      const roleFromProfile = profile?.role;
+      const isAdminStatus = superAdminStatus || roleFromProfile === 'adm' || roleFromProfile === 'gestora';
+      
+      const orgId = profile?.organization_id || null;
+      const orgName = profile?.organization_name || (superAdminStatus ? "God Mode" : "Lumina Control");
 
-      setIsAdmin(adminStatus);
+      setIsAdmin(isAdminStatus);
       setIsSuperAdmin(superAdminStatus);
-      setAdminData(profile || (superAdminStatus ? { nome: 'Super Admin', email: userEmail } : (userMetadata.nome ? { nome: userMetadata.nome, email: userEmail } : null)));
-      
-      // PRIORIDADE: Perfil do Banco > Metadados do JWT (Fallback imediato)
-      const finalOrgId = profile?.organization_id || userMetadata.organization_id || null;
-      console.log("[AUTH] Final Org Detection:", {
-        fromProfile: profile?.organization_id,
-        fromMetadata: userMetadata.organization_id,
-        finalResult: finalOrgId
-      });
-      setOrganizationId(finalOrgId);
+      setAdminData(profile || { nome: profile?.nome || 'Usuário', email: userEmail });
+      setOrganizationId(orgId);
+      setOrganizationName(orgName);
 
-      let orgName = null;
-      let detectedOrgId = finalOrgId;
-      
-      // PRIORIDADE 1: Tentar buscar via Join com o Perfil (mais robusto contra RLS)
-      if (userId) {
-        console.log("[AUTH] Tentando busca via JOIN Profile-Org para User:", userId);
-        const { data: profileWithOrg } = await supabase
-          .from('profiles')
-          .select(`
-            organization_id,
-            organizations (
-              name
-            )
-          `)
-          .eq('id', userId)
-          .maybeSingle();
-
-        if (profileWithOrg?.organizations) {
-          const joinedName = (profileWithOrg.organizations as any).name;
-          if (joinedName) {
-            orgName = joinedName;
-            detectedOrgId = profileWithOrg.organization_id;
-            console.log("[AUTH] ✅ Nome encontrado via JOIN:", orgName);
-          }
-        }
-      }
-
-      // Se o JOIN falhou, tentar a busca direta anterior como plano B
-      if (!orgName && detectedOrgId) {
-        console.log("[AUTH] JOIN falhou, tentando busca DIRETA por ID:", detectedOrgId);
-        const { data: org } = await supabase
-          .from('organizations')
-          .select('name')
-          .eq('id', detectedOrgId)
-          .maybeSingle();
-        
-        if (org) {
-          orgName = org.name;
-          console.log("[AUTH] Nome encontrado via busca direta:", orgName);
-        }
-      }
-
-      // PRIORIDADE 2: Fallback Soberano - Buscar vínculo no banco por e-mail se o principal falhou
-      if (!orgName && userEmail) {
-        const { data: profileByEmail } = await supabase
-          .from('profiles')
-          .select('organization_id')
-          .ilike('email', userEmail)
-          .maybeSingle();
-        
-        let retryOrgId = profileByEmail?.organization_id || null;
-
-        if (!retryOrgId) {
-          const { data: directOrg } = await supabase
-            .from('organizations')
-            .select('id, name')
-            .ilike('slug', '%lyb%')
-            .limit(1)
-            .maybeSingle();
-          
-          if (directOrg) {
-            orgName = directOrg.name;
-            detectedOrgId = directOrg.id;
-            setOrganizationId(detectedOrgId);
-          }
-        }
-
-        if (retryOrgId && !orgName) {
-          detectedOrgId = retryOrgId;
-          setOrganizationId(detectedOrgId);
-          const { data: org } = await supabase.from('organizations').select('name').eq('id', retryOrgId).maybeSingle();
-          if (org) orgName = org.name;
-        }
-      }
-
-      setOrganizationName(orgName || userMetadata.organization_name || "Lumina Control");
-
-      // Salvar no cache
       const cacheData = {
-        isAdmin: adminStatus,
+        isAdmin: isAdminStatus,
         isSuperAdmin: superAdminStatus,
-        adminData: adminStatus ? profile : null,
-        organizationId: profile?.organization_id || null,
+        adminData: profile,
+        organizationId: orgId,
         organizationName: orgName,
         timestamp: Date.now()
       };
+      
       localStorage.setItem(cacheKey, JSON.stringify(cacheData));
-      console.log("[AUTH] Dados salvos no cache");
 
     } catch (error) {
       console.error("[AUTH] Erro ao verificar status de admin:", error);

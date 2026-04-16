@@ -45,11 +45,16 @@ const SetPassword = () => {
     setPasswordStrength({ score, feedback });
   };
 
+  const [hashProcessed, setHashProcessed] = useState(false);
+
   // EFEITO 1: Processar o Hash do link de convite (apenas uma vez)
   useEffect(() => {
     const handleHash = async () => {
       const hash = window.location.hash;
-      if (!hash) return;
+      if (!hash) {
+        setHashProcessed(true);
+        return;
+      }
 
       console.log('[SET-PASSWORD] 🎫 Processando link de convite...');
       
@@ -59,7 +64,6 @@ const SetPassword = () => {
       let refreshToken = params.get('refresh_token');
       let type = params.get('type');
 
-      // Fallback para Regex se URLSearchParams falhar em algum campo
       if (!accessToken || !refreshToken || !type) {
         accessToken = accessToken || hash.match(/access_token=([^&]+)/)?.[1] || null;
         refreshToken = refreshToken || hash.match(/refresh_token=([^&]+)/)?.[1] || null;
@@ -69,7 +73,6 @@ const SetPassword = () => {
       console.log('[SET-PASSWORD] 🔍 Análise do Hash:', { type, hasAccess: !!accessToken, hasRefresh: !!refreshToken });
 
       if (accessToken && refreshToken) {
-        console.log('[SET-PASSWORD] ⏳ Consumindo tokens detectados...');
         try {
           supabase.auth.setSession({
             access_token: accessToken,
@@ -81,14 +84,13 @@ const SetPassword = () => {
         } catch (err) {
           console.error('[SET-PASSWORD] Erro fatal no setSession:', err);
         }
-      } else {
-        console.warn('[SET-PASSWORD] ⚠️ Tokens não encontrados no hash.');
       }
 
-      // LIMPEZA OBRIGATÓRIA: Limpar o hash idependente de sucesso para liberar o Efeito 2
+      // LIMPEZA OBRIGATÓRIA: Limpar o hash idependente de sucesso
       setTimeout(() => {
         window.history.replaceState(null, '', window.location.pathname);
         console.log('[SET-PASSWORD] 🧹 Hash limpo para liberar interface');
+        setHashProcessed(true);
       }, 500);
     };
     
@@ -97,24 +99,23 @@ const SetPassword = () => {
 
   // EFEITO 2: Monitorar o estado de autenticação global para liberar a tela
   useEffect(() => {
-    const hasHash = !!window.location.hash;
-    console.log('[SET-PASSWORD] 🔍 Monitoramento Auth:', { userEmail: user?.email, authLoading, hasHash });
+    console.log('[SET-PASSWORD] 🔍 Monitoramento Auth:', { userEmail: user?.email, authLoading, hashProcessed });
     
     if (user) {
       console.log('[SET-PASSWORD] ✨ Usuário detectado! Liberando formulário.');
       setValidating(false);
-    } else if (!authLoading && !hasHash) {
-      // Se não estamos carregando e não tem hash, significa que o processamento terminou
-      // Damos mais 2 segundos antes de desistir
+    } else if (!authLoading && hashProcessed) {
+      // Se já processamos o hash e o auth terminou de carregar, mas não temos usuário...
+      // Forçamos o desbloqueio para mostrar erro ou formulário vazio (failsafe)
       const timer = setTimeout(() => {
         if (!user) {
-          console.warn('[SET-PASSWORD] ⚠️ Nenhuma sessão detectada após processamento. Forçando exibição do erro/login.');
-          setValidating(false); // Liberamos para mostrar o formulário ou erro interno
+          console.warn('[SET-PASSWORD] ⚠️ Nenhuma sessão detectada após processamento. Forçando exibição.');
+          setValidating(false);
         }
-      }, 2000);
+      }, 1500);
       return () => clearTimeout(timer);
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, hashProcessed]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

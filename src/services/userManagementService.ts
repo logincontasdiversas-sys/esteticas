@@ -181,28 +181,30 @@ export const createUserWithRole = async (
 ) => {
   if (!organizationId) throw new Error("ID da organização é obrigatório para convidar usuários");
   // ONLY use Edge Function - no fallback to avoid admin logout
-  console.log('Convidando usuário via Supabase Edge Function:', { email, nome, role, organizationName });
-  
-  try {
-    const { data, error } = await supabase.functions.invoke('invite-user', {
-      body: { 
-        email, 
-        nome, 
-        role,
-        organization_id: organizationId,
-        organization_name: organizationName || 'Lumina Control',
-        origin: window.location.origin
-      }
+    const payload = { 
+      email, 
+      nome, 
+      role,
+      organization_id: organizationId,
+      organization_name: organizationName || 'Lumina Control',
+      origin: window.location.origin
+    };
+
+    console.log('🚀 Enviando para Edge Function:', payload);
+
+    const { data: rawData, error } = await supabase.functions.invoke('invite-user', {
+      body: payload
     });
     
     if (error) {
       console.error('❌ Erro na Edge Function:', error);
+      console.log('📦 Resposta bruta do servidor:', rawData);
       
       // Tentar extrair a mensagem de erro detalhada do corpo da resposta
       let errorMsg = error.message;
-      if (data && typeof data === 'object' && (data as any).error) {
-        errorMsg = (data as any).error;
-        console.error('📝 Motivo detalhado:', (data as any).error);
+      if (rawData && typeof rawData === 'object' && (rawData as any).error) {
+        errorMsg = (rawData as any).error;
+        console.error('📝 Motivo detalhado:', (rawData as any).error);
       }
       
       return { 

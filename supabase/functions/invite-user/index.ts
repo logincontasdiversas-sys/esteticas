@@ -74,31 +74,45 @@ const handler = async (req: Request) => {
 
     console.log('✅ User invited in Auth:', userData.user.id);
 
-    // BACKGROUND SYNC (NON-BLOCKING)
-    // We do NOT await these to ensure the function returns 200 immediately
-    // The database triggers will likely handle this anyway
-    (async () => {
-      try {
-        console.log('👤 Sincronizando Perfil (background)...');
-        await supabaseAdmin.from('profiles').upsert({
-          id: userData.user.id,
-          nome: nome,
-          email: email,
-          role: role,
-          organization_id: organization_id
-        }, { onConflict: 'id' });
+    // SINCRONIZAÇÃO OBRIGATÓRIA (Omega Stability v5.0 - BLOCKING)
+    try {
+      console.log('👤 Criando Perfil no Banco de Dados...');
+      // Estrutura validada: id, nome, email, organization_id
+      const { error: profileError } = await supabaseAdmin.from('profiles').upsert({
+        id: userData.user.id,
+        nome: nome,
+        email: email,
+        organization_id: organization_id,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
 
-        console.log('🛡️ Sincronizando Cargo (background)...');
-        await supabaseAdmin.from('user_roles').upsert({
-          user_id: userData.user.id,
-          role: role
-        }, { onConflict: 'user_id,role' });
-      } catch (e) {
-        console.warn('⚠️ Nota: Falha na sincronização de background:', e.message);
+      if (profileError) {
+        console.error('❌ Falha ao criar perfil:', profileError.message);
+        throw new Error(`Erro no perfil: ${profileError.message}`);
       }
-    })();
 
-    console.log('✅ Retornando sucesso imediato');
+      console.log('🛡️ Criando Cargo no Banco de Dados...');
+      // Estrutura validada: user_id, role
+      const { error: roleError } = await supabaseAdmin.from('user_roles').upsert({
+        user_id: userData.user.id,
+        role: role
+      }, { onConflict: 'user_id,role' });
+
+      if (roleError) {
+        console.error('❌ Falha ao criar cargo:', roleError.message);
+        throw new Error(`Erro no cargo: ${roleError.message}`);
+      }
+
+      console.log('✅ Perfil e Cargo sincronizados com sucesso.');
+    } catch (syncError) {
+      console.error('💥 ERRO CRÍTICO NA SINCRONIZAÇÃO:', syncError.message);
+      // Aqui poderíamos deletar o usuário convidado se a sincronia falhar, 
+      // mas por segurança letal apenas reportamos o erro para o Admin corrigir.
+      return new Response(JSON.stringify({
+        success: false,
+        error: `Convite enviado, mas houve erro no banco: ${syncError.message}`
+      }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+    }
     
     return new Response(JSON.stringify({
       success: true,

@@ -197,15 +197,17 @@ export const createUserWithRole = async (
     
     if (error) {
       console.error('❌ Erro na Edge Function:', error);
-      // Tentativa de pegar o erro do corpo da resposta, caso o status não seja 2xx
-      let errorDetail = error.message;
-      if (data && typeof data === 'object' && data.error) {
-        errorDetail = data.error;
+      
+      // Tentar extrair a mensagem de erro detalhada do corpo da resposta
+      let errorMsg = error.message;
+      if (data && typeof data === 'object' && (data as any).error) {
+        errorMsg = (data as any).error;
+        console.error('📝 Motivo detalhado:', (data as any).error);
       }
       
       return { 
         data: null, 
-        error: new Error(errorDetail || 'Erro desconhecido na Edge Function') 
+        error: new Error(errorMsg || 'Erro desconhecido na Edge Function') 
       };
     }
     

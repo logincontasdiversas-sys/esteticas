@@ -246,7 +246,7 @@ export const SuperAdminDashboard = () => {
                 />
               </div>
               <Button type="submit" disabled={inviting} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
-                {inviting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <><Send className="w-4 h-4" /> Enviar Convite</>}
+                {inviting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <>CONVIDAR EMPRESÁRIO (SISTEMA V4)</>}
               </Button>
             </form>
           </CardContent>

@@ -62,17 +62,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       // Verificar cache primeiro
       const cacheKey = `admin_${userId}`;
-      const cachedData = localStorage.getItem(cacheKey);
+      const cachedAuth = localStorage.getItem(`auth_cache_${userId}`);
+      const metadata = session?.user.user_metadata || {};
       
-      if (cachedData && !forceRefresh) {
-        const parsed = JSON.parse(cachedData);
-        console.log("[AUTH] Usando dados do cache:", parsed);
-        setIsAdmin(parsed.isAdmin);
-        setAdminData(parsed.adminData);
-        setOrganizationId(parsed.organizationId || null);
-        setOrganizationName(parsed.organizationName || null);
-        setIsSuperAdmin(parsed.isSuperAdmin || false);
-        return;
+      // Omega Stability v8.0: Ignorar cache se ele estiver vazio/incompleto mas o metadado tiver a organização
+      if (cachedAuth && !forceRefresh) {
+        const parsed = JSON.parse(cachedAuth);
+        if (parsed.organizationId || !metadata.organization_id) {
+          console.log("[AUTH] Usando dados do cache:", parsed);
+          setIsAdmin(parsed.isAdmin);
+          setIsSuperAdmin(parsed.isSuperAdmin);
+          setAdminData(parsed.adminData);
+          setOrganizationId(parsed.organizationId);
+          setOrganizationName(parsed.organizationName);
+          setIsCheckingAdmin(false);
+          return;
+        }
+        console.log("[AUTH] Cache detectado mas incompleto. Revalidando com metadados...");
       }
 
       console.log("[AUTH] Buscando dados do Supabase...");
@@ -277,7 +283,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               // Limpar URL
               window.history.replaceState(null, '', window.location.pathname);
             } catch (err) {
-              console.error('[AUTH] Erro interno ao processar link:', err);
+              console.error('[AUTH] ❌ Falha crítica ao processar link:', err);
             }
           }
         }

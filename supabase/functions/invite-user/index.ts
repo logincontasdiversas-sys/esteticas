@@ -20,18 +20,24 @@ const handler = async (req: Request) => {
     
     // PRIORIDADE: Origem enviada pelo frontend > Secret APP_URL > Default
     const appUrl = origin || Deno.env.get('APP_URL') || 'http://localhost:8081';
-    const serviceRoleKey = Deno.env.get('SERVICE_ROLE_KEY')
 
-    if (!appUrl || !serviceRoleKey) {
-      console.error('❌ Faltam segredos (secrets): APP_URL ou SERVICE_ROLE_KEY');
+    // Recuperação resiliente da Service Role Key
+    const serviceRoleKey = Deno.env.get('APP_SERVICE_ROLE_KEY') || 
+                          Deno.env.get('SERVICE_ROLE_KEY') || 
+                          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+
+    // Recuperação resiliente da URL do Supabase
+    const supabaseUrl = Deno.env.get('APP_SUPABASE_URL') || 
+                        Deno.env.get('SUPABASE_URL') || 
+                        '';
+
+    if (!appUrl || !serviceRoleKey || !supabaseUrl) {
+      console.error('❌ Falha na configuração: APP_URL, SERVICE_ROLE_KEY ou SUPABASE_URL não encontrados.');
       return new Response(JSON.stringify({
-        error: 'Configuração incompleta no Supabase. Verifique os Secrets (APP_URL e SERVICE_ROLE_KEY).'
+        error: 'Configuração incompleta no Supabase. Verifique os Secrets.'
       }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
 
-    // USAR A URL INTERNA DO SUPABASE (Diferente da APP_URL do frontend)
-    const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
-    
     // Create Supabase client with service role
     const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: {

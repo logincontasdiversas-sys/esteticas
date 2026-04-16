@@ -244,6 +244,31 @@ const SetPassword = () => {
         </form>
       </Card>
     </div>
+    
+    {/* Overlay de carregamento com Saída de Emergência */}
+    {loading && (
+      <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div className="bg-zinc-900 border border-zinc-800 p-8 rounded-2xl max-w-sm w-full text-center space-y-6 shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="relative w-20 h-20 mx-auto">
+            <div className="absolute inset-0 border-4 border-emerald-500/20 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-xl font-bold text-white">Salvando sua senha</h3>
+            <p className="text-zinc-400 text-sm">Estamos preparando seu acesso premium...</p>
+          </div>
+          
+          <div className="pt-4 border-t border-zinc-800/50">
+            <button 
+              onClick={() => window.location.href = '/'}
+              className="text-xs text-zinc-500 hover:text-emerald-400 transition-colors underline underline-offset-4"
+            >
+              Demorando muito? Clique aqui para ir ao Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
   );
 };
 

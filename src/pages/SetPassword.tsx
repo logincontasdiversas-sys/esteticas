@@ -45,108 +45,25 @@ const SetPassword = () => {
     setPasswordStrength({ score, feedback });
   };
 
-  const [hashProcessed, setHashProcessed] = useState(false);
-
-  // EFEITO 1: Processar o link de convite (Hash ou Query Params)
+  // Monitorar o estado de autenticação global para liberar a tela
   useEffect(() => {
-    const handleHash = async () => {
-      const hash = window.location.hash;
-      const search = window.location.search;
-      
-      if (!hash && !search) {
-        console.log('[SET-PASSWORD] ℹ️ URL limpa, aguardando auth global...');
-        setHashProcessed(true);
-        return;
-      }
-
-      console.log('[SET-PASSWORD] 🎫 Processando URL de convite...');
-      
-      // Extrair parâmetros de forma independente
-      const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
-      const searchParams = new URLSearchParams(search.replace(/^\?/, ''));
-      
-      // Tentar capturar de qualquer uma das fontes
-      let accessToken = hashParams.get('access_token') || searchParams.get('access_token');
-      let refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
-      let type = hashParams.get('type') || searchParams.get('type');
-      let token = hashParams.get('token') || searchParams.get('token'); // Fallback para OTP simple token
-
-      // Fallback agressivo para Regex (procura em toda a URL)
-      if (!accessToken || !refreshToken) {
-        const url = window.location.href;
-        accessToken = accessToken || url.match(/[#?&]access_token=([^&#]+)/)?.[1] || null;
-        refreshToken = refreshToken || url.match(/[#?&]refresh_token=([^&#]+)/)?.[1] || null;
-        type = type || url.match(/[#?&]type=([^&#]+)/)?.[1] || null;
-        token = token || url.match(/[#?&]token=([^&#]+)/)?.[1] || null;
-      }
-
-      console.log('[SET-PASSWORD] 🔍 Diagnóstico de URL:', { 
-        type, 
-        hasAccess: !!accessToken, 
-        hasRefresh: !!refreshToken,
-        hasOTP: !!token
-      });
-
-      if ((accessToken && refreshToken) || token) {
-        try {
-          console.log('[SET-PASSWORD] ⏳ Sincronizando sessão com Supabase...');
-          
-          let result;
-          if (accessToken && refreshToken) {
-            result = await supabase.auth.setSession({
-              access_token: accessToken,
-              refresh_token: refreshToken
-            });
-          } else if (token && type === 'invite') {
-            // Se for apenas o token de convite (signup flow)
-            result = await supabase.auth.verifyOtp({
-              token_hash: token,
-              type: 'invite'
-            });
-          }
-
-          if (result?.error) {
-            console.error('[SET-PASSWORD] ❌ Erro na sincronização:', result.error.message);
-          } else {
-            console.log('[SET-PASSWORD] ✅ Sessão estabelecida com sucesso');
-          }
-        } catch (err) {
-          console.error('[SET-PASSWORD] Erro fatal no processamento:', err);
-        }
-      } else {
-        console.warn('[SET-PASSWORD] ⚠️ Nenhum token de autenticação detectado na URL.');
-      }
-
-      // LIMPEZA OBRIGATÓRIA: Limpar a barra de endereço para segurança
-      setTimeout(() => {
-        window.history.replaceState(null, '', window.location.pathname);
-        console.log('[SET-PASSWORD] 🧹 URL limpa');
-        setHashProcessed(true);
-      }, 1000);
-    };
-    
-    handleHash();
-  }, []);
-
-  // EFEITO 2: Monitorar o estado de autenticação global para liberar a tela
-  useEffect(() => {
-    console.log('[SET-PASSWORD] 🔍 Monitoramento Auth:', { userEmail: user?.email, authLoading, hashProcessed });
+    console.log('[SET-PASSWORD] 🔍 Monitoramento Auth:', { userEmail: user?.email, authLoading });
     
     if (user) {
-      console.log('[SET-PASSWORD] ✨ Usuário detectado! Liberando formulário.');
+      console.log('[SET-PASSWORD] ✨ Usuário detectado via Cérebro Global! Liberando formulário.');
       setValidating(false);
-    } else if (!authLoading && hashProcessed) {
-      // Se já processamos o hash e o auth terminou de carregar, mas não temos usuário...
-      // Forçamos o desbloqueio para mostrar erro ou formulário vazio (failsafe)
+    } else if (!authLoading) {
+      // Se terminou de carregar o auth global e ainda não temos usuário, damos 4 segundos
+      // para o caso de o processamento do link estar em andamento no useAuth.
       const timer = setTimeout(() => {
         if (!user) {
-          console.warn('[SET-PASSWORD] ⚠️ Nenhuma sessão detectada após processamento. Forçando exibição.');
+          console.warn('[SET-PASSWORD] ⚠️ Nenhuma sessão detectada. Link pode estar inválido ou expirado.');
           setValidating(false);
         }
-      }, 1500);
+      }, 4000);
       return () => clearTimeout(timer);
     }
-  }, [user, authLoading, hashProcessed]);
+  }, [user, authLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

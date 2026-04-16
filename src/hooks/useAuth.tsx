@@ -218,9 +218,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    // Verificar sessão inicial
+    // Verificar sessão inicial e processar links de convite/recuperação
     const getInitialSession = async () => {
       try {
+        const hash = window.location.hash;
+        const search = window.location.search;
+        
+        // Processamento de Link de Convite/Recuperação SOBERANO
+        if (hash.includes('access_token=') || search.includes('access_token=') || search.includes('token=')) {
+          console.log('[AUTH] 🎫 Link de autenticação detectado na URL. Processando...');
+          
+          const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+          const searchParams = new URLSearchParams(search.replace(/^\?/, ''));
+          
+          let accessToken = hashParams.get('access_token') || searchParams.get('access_token');
+          let refreshToken = hashParams.get('refresh_token') || searchParams.get('refresh_token');
+          let type = hashParams.get('type') || searchParams.get('type');
+          let token = hashParams.get('token') || searchParams.get('token');
+
+          // Fallback Regex
+          if (!accessToken || !refreshToken) {
+            const url = window.location.href;
+            accessToken = accessToken || url.match(/[#?&]access_token=([^&#]+)/)?.[1] || null;
+            refreshToken = refreshToken || url.match(/[#?&]refresh_token=([^&#]+)/)?.[1] || null;
+            type = type || url.match(/[#?&]type=([^&#]+)/)?.[1] || null;
+            token = token || url.match(/[#?&]token=([^&#]+)/)?.[1] || null;
+          }
+
+          if ((accessToken && refreshToken) || (token && type === 'invite')) {
+            try {
+              if (accessToken && refreshToken) {
+                console.log('[AUTH] ⏳ Configurando sessão via Tokens...');
+                await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+              } else if (token && type === 'invite') {
+                console.log('[AUTH] ⏳ Verificando OTP (Convite)...');
+                await supabase.auth.verifyOtp({ token_hash: token, type: 'invite' });
+              }
+              console.log('[AUTH] ✅ Sessão sincronizada com sucesso');
+              
+              // Limpar URL para evitar re-processamento em refreshes
+              window.history.replaceState(null, '', window.location.pathname);
+            } catch (err) {
+              console.error('[AUTH] Erro ao sincronizar link:', err);
+            }
+          }
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {

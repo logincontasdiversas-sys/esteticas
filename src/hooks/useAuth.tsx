@@ -142,20 +142,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // PRIORIDADE 2: Fallback Soberano - Se não tem ID ou não achou nome, buscar por e-mail do proprietário
+      // PRIORIDADE 2: Fallback Soberano - Buscar vínculo no banco pelo e-mail se o perfil principal falhou
       if (!orgName && userEmail) {
-        console.log("[AUTH] Fallback: Buscando organização por e-mail do dono:", userEmail);
-        const { data: orgByEmail } = await supabase
-          .from('organizations')
-          .select('id, name')
-          .eq('owner_email', userEmail)
+        console.log("[AUTH] Fallback: Buscando vínculo por e-mail:", userEmail);
+        
+        // Buscar o perfil que tenha este e-mail para encontrar o organization_id
+        const { data: profileByEmail } = await supabase
+          .from('profiles')
+          .select('organization_id')
+          .eq('email', userEmail)
           .maybeSingle();
         
-        if (orgByEmail) {
-          orgName = orgByEmail.name;
-          detectedOrgId = orgByEmail.id;
-          setOrganizationId(detectedOrgId); // Atualiza o ID também
-          console.log("[AUTH] Nome e ID encontrados via e-mail do dono:", orgName);
+        const retryOrgId = profileByEmail?.organization_id || null;
+
+        if (retryOrgId) {
+          console.log("[AUTH] ID da organização recuperado via e-mail:", retryOrgId);
+          detectedOrgId = retryOrgId;
+          setOrganizationId(detectedOrgId);
+
+          const { data: org } = await supabase
+            .from('organizations')
+            .select('name')
+            .eq('id', retryOrgId)
+            .maybeSingle();
+            
+          if (org) {
+            orgName = org.name;
+            console.log("[AUTH] Nome da organização recuperado:", orgName);
+          }
         }
       }
 

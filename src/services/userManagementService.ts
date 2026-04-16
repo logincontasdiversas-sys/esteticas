@@ -237,40 +237,7 @@ export const updateUserRole = async (userId: string, newRole: AppRole | 'adm') =
     // Verificar usuário atual logado
     const { data: { user: currentUser } } = await supabase.auth.getUser();
     
-    if (!currentUser) {
-      console.error('❌ [updateUserRole] Usuário não autenticado!');
-      return { data: null, error: { message: 'Usuário não autenticado' } };
-    }
-    
-    // Buscar perfil do usuário
-    console.log('🔄 [updateUserRole] Buscando perfil...');
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, nome, email')
-      .eq('id', userId)
-      .single();
-    
-    if (profileError) {
-      console.error('❌ [updateUserRole] Erro ao buscar perfil:', profileError);
-      return { data: null, error: profileError };
-    }
-    
-    console.log('✅ [updateUserRole] Perfil encontrado:', profileData);
-    
-    // Primeiro, verificar hierarquia
-    const { data: targetRoleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-
     const isSuperAdmin = currentUser.email === 'admin@god.com';
-    const isTargetGestora = targetRoleData?.role === 'gestora';
-
-    if (isTargetGestora && !isSuperAdmin) {
-      console.error('❌ [updateUserRole] Tentativa de alterar outro Gestor negada!');
-      return { data: null, error: { message: 'Apenas o Super Admin pode alterar perfis de Gestores.' } };
-    }
 
     console.log('🔄 [updateUserRole] Atualizando user_roles...');
     
@@ -332,20 +299,7 @@ export const deleteUser = async (userId: string) => {
     
     // Verificar se o usuário atual está logado
     const { data: { user: currentUser } } = await supabase.auth.getUser();
-    // Verificar hierarquia antes de excluir
-    const { data: targetRoleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', userId)
-      .single();
-
     const isSuperAdmin = currentUser.email === 'admin@god.com';
-    const isTargetGestora = targetRoleData?.role === 'gestora';
-
-    if (isTargetGestora && !isSuperAdmin) {
-      console.error('❌ [deleteUser] Tentativa de excluir um Gestor negada!');
-      return { data: null, error: new Error('Apenas o Super Admin pode excluir perfis de Gestores.') };
-    }
 
     // Try Edge Function first for complete deletion
     try {

@@ -250,8 +250,7 @@ export const UserManagement = () => {
             </TableHeader>
             <TableBody>
               {users.map((user) => {
-                const isTargetGestora = user.role === 'gestora';
-                const canEdit = isSuperAdmin || !isTargetGestora;
+                const canEdit = true;
 
                 return (
                   <TableRow key={user.id}>

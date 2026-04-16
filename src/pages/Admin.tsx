@@ -60,11 +60,11 @@ const Admin = () => {
 
   const getPageTitle = () => {
     switch (activePage) {
-      case 'users': return 'Gestão de Usuários';
-      case 'profissionais': return 'Gestão de Profissionais';
-      case 'aportes': return 'Movimentações de Caixa';
-      case 'audit': return 'Auditoria & Logs do Sistema';
-      default: return 'Painel Administrativo';
+      case 'users': return { title: '👥 Usuários', subtitle: 'Gestão de perfis e acessos' };
+      case 'profissionais': return { title: '👩‍💼 Profissionais', subtitle: 'Configuração de taxas e cargos' };
+      case 'aportes': return { title: '💰 Movimentações', subtitle: 'Aportes e retiradas master' };
+      case 'audit': return { title: '📋 Auditoria', subtitle: 'Logs e rastreabilidade do sistema' };
+      default: return { title: 'Painel Master', subtitle: 'Configurações Administrativas' };
     }
   };
 
@@ -114,9 +114,14 @@ const Admin = () => {
               <div className="p-1.5 bg-amber-500/10 rounded-lg">
                 <Shield className="w-5 h-5 text-amber-600" />
               </div>
-              <h2 className="text-lg font-bold text-slate-800 tracking-tight hidden sm:block">
-                {getPageTitle()}
-              </h2>
+              <div className="hidden sm:flex flex-col">
+                <h2 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">
+                  {getPageTitle().title}
+                </h2>
+                <p className="text-[10px] text-slate-500 font-medium leading-none">
+                  {getPageTitle().subtitle}
+                </p>
+              </div>
             </div>
           </div>
 

@@ -47,11 +47,11 @@ const Index = () => {
 
   const getPageTitle = () => {
     switch (activePage) {
-      case 'dashboard': return 'Dashboard Overview';
-      case 'lancamentos': return 'Gestão de Lançamentos';
-      case 'profissionais': return 'Relatório de Profissionais';
-      case 'fluxo': return 'Fluxo de Caixa';
-      default: return 'Painel de Controle';
+      case 'dashboard': return { title: '📊 Dashboard', subtitle: 'Visão geral do sistema' };
+      case 'lancamentos': return { title: '📋 Lançamentos', subtitle: 'Gestão de entradas e saídas' };
+      case 'profissionais': return { title: '👩‍💼 Profissionais', subtitle: 'Relatórios de atendimento' };
+      case 'fluxo': return { title: '💰 Fluxo de Caixa', subtitle: 'Acompanhamento financeiro' };
+      default: return { title: 'Painel de Controle', subtitle: 'Gestão Lumina Control' };
     }
   };
 
@@ -101,9 +101,14 @@ const Index = () => {
             >
               <Menu className="w-6 h-6 text-slate-600" />
             </button>
-            <h2 className="text-lg font-bold text-slate-800 tracking-tight hidden sm:block">
-              {getPageTitle()}
-            </h2>
+            <div className="hidden sm:flex flex-col">
+              <h2 className="text-lg font-bold text-slate-800 tracking-tight leading-tight">
+                {getPageTitle().title}
+              </h2>
+              <p className="text-[10px] text-slate-500 font-medium leading-none">
+                {getPageTitle().subtitle}
+              </p>
+            </div>
           </div>
 
           <div className="flex items-center gap-4">

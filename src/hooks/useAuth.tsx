@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("[AUTH] Verificando status de admin para usuário:", userId);
       
       // Verificar cache atualizado
-      const cacheKey = `auth_admin_v12_${userId}`;
+      const cacheKey = `auth_admin_v13_${userId}`;
       const cachedAuth = localStorage.getItem(cacheKey);
       const metadata = session?.user.user_metadata || {};
       
@@ -157,36 +157,44 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         let retryOrgId = profileByEmail?.organization_id || null;
 
-        // 2. Se não achou ID no perfil, tentar ver se este e-mail está na tabela organizations (como dono)
-        // Nota: David mencionou que cadastrou no painel, vamos garantir a busca direta
-        if (!retryOrgId) {
-          console.log("[AUTH] 📡 Tentando busca DIRETA na tabela de organizações por owner_email...");
-          const { data: directOrg } = await supabase
-            .from('organizations')
-            .select('id, name')
-            .ilike('slug', '%lyb%') // Tentativa desesperada se o e-mail falhar, buscando pelo slug
+      // PRIORIDADE 2: Fallback Soberano - Se não tem nome ainda, buscar por meios alternativos
+      if (!orgName) {
+        console.log("[AUTH] 🔥 Iniciando Busca Alternativa (Org Name ainda nulo)");
+        
+        // 1. Tentar buscar no perfil por e-mail (caso o ID original esteja quebrado)
+        if (userEmail) {
+          const { data: profileByEmail } = await supabase
+            .from('profiles')
+            .select('organization_id')
+            .ilike('email', userEmail)
             .maybeSingle();
           
-          if (directOrg) {
-            console.log("[AUTH] 🎯 Encontrada organização via Slug 'lyb':", directOrg.name);
-            retryOrgId = directOrg.id;
-            orgName = directOrg.name;
+          if (profileByEmail?.organization_id && profileByEmail.organization_id !== detectedOrgId) {
+            console.log("[AUTH] 💡 Novo ID encontrado via e-mail:", profileByEmail.organization_id);
+            const { data: o } = await supabase.from('organizations').select('name').eq('id', profileByEmail.organization_id).maybeSingle();
+            if (o) {
+              orgName = o.name;
+              detectedOrgId = profileByEmail.organization_id;
+              setOrganizationId(detectedOrgId);
+            }
           }
         }
 
-        if (retryOrgId && !orgName) {
-          detectedOrgId = retryOrgId;
-          setOrganizationId(detectedOrgId);
-
-          const { data: org } = await supabase
+        // 2. Tentar busca DIRETA por Slug se ainda nada (Último recurso técnico)
+        if (!orgName) {
+          console.log("[AUTH] 📡 Tentativa final: Busca por Slug 'lyb'...");
+          const { data: directOrg } = await supabase
             .from('organizations')
-            .select('name')
-            .eq('id', retryOrgId)
+            .select('id, name')
+            .ilike('slug', '%lyb%')
+            .limit(1)
             .maybeSingle();
-            
-          if (org) {
-            orgName = org.name;
-            console.log("[AUTH] ✅ Nome da organização recuperado do Banco:", orgName);
+          
+          if (directOrg) {
+            console.log("[AUTH] 🎯 Encontrada via Slug:", directOrg.name);
+            orgName = directOrg.name;
+            detectedOrgId = directOrg.id;
+            setOrganizationId(detectedOrgId);
           }
         }
       }
@@ -194,6 +202,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // RESUMO FINAL PARA O CONTEXTO
       const finalDisplayResult = orgName || userMetadata.organization_name || "Lumina Control";
       console.log("[AUTH] 🏁 Resultado Final da Identidade:", {
+        id: detectedOrgId,
         orgName,
         metaName: userMetadata.organization_name,
         display: finalDisplayResult

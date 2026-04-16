@@ -1,17 +1,19 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Dashboard } from "@/components/Dashboard";
 import { LancamentosList } from "@/components/LancamentosList";
 import { ProfissionaisReport } from "@/components/ProfissionaisReport";
 import { FluxoCaixa } from "@/components/FluxoCaixa";
+import { Sidebar, SidebarPage } from "@/components/Sidebar";
+import { Menu, X, Bell, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const navigate = useNavigate();
-  const { user, signOut, isAdmin, isSuperAdmin, organizationName, adminData, loading: authLoading } = useAuth();
+  const { user, signOut, isAdmin, organizationName, adminData, loading: authLoading } = useAuth();
+  const [activePage, setActivePage] = useState<SidebarPage>('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Redirecionar para login se não estiver autenticado
   useEffect(() => {
@@ -24,84 +26,117 @@ const Index = () => {
     await signOut();
   };
 
+  if (authLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-slate-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  const renderContent = () => {
+    switch (activePage) {
+      case 'dashboard': return <Dashboard />;
+      case 'lancamentos': return <LancamentosList />;
+      case 'profissionais': return <ProfissionaisReport />;
+      case 'fluxo': return <FluxoCaixa />;
+      case 'admin': navigate('/admin'); return null;
+      default: return <Dashboard />;
+    }
+  };
+
+  const getPageTitle = () => {
+    switch (activePage) {
+      case 'dashboard': return 'Dashboard Overview';
+      case 'lancamentos': return 'Gestão de Lançamentos';
+      case 'profissionais': return 'Relatório de Profissionais';
+      case 'fluxo': return 'Fluxo de Caixa';
+      default: return 'Painel de Controle';
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-primary text-primary-foreground p-4 shadow-md">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
-          <div className="flex-1">
-            <h1 className="text-xl font-bold">✨ Lumina Control</h1>
-            <p className="text-xs opacity-80">
-              Gestão Financeira
-            </p>
-          </div>
-
-          <div className="flex-1 text-center">
-            {organizationName ? (
-              <h2 className="text-2xl font-black uppercase tracking-widest text-white animate-pulse">
-                🏛️ {organizationName}
-              </h2>
-            ) : (
-              <h2 className="text-lg font-medium opacity-50 italic">
-                Aguardando Organização...
-              </h2>
-            )}
-            {user && (
-              <div className="mt-1">
-                <p className="text-sm font-bold text-white mb-0.5">
-                  Olá, {adminData?.nome || 'Usuário'}!
-                </p>
-                <p className="text-[10px] opacity-60 font-mono tracking-tight">
-                  {user.email}
-                </p>
-              </div>
-            )}
-          </div>
-
-          <div className="flex-1 flex justify-end gap-2">
-            {isSuperAdmin && (
-              <Button variant="outline" size="sm" className="bg-slate-900 border-indigo-500/50 text-indigo-400 hover:bg-slate-800" onClick={() => navigate('/god-mode')}>
-                🛠️ Modo Deus
-              </Button>
-            )}
-            {isAdmin && (
-              <Button variant="secondary" size="sm" onClick={() => navigate('/admin')}>
-                ⚙️ Admin
-              </Button>
-            )}
-            <Button variant="destructive" size="sm" onClick={handleSignOut}>
-              Sair
-            </Button>
-          </div>
-        </div>
+    <div className="flex h-screen bg-slate-50 overflow-hidden">
+      {/* Sidebar Desktop */}
+      <div className="hidden md:block">
+        <Sidebar 
+          activePage={activePage} 
+          setActivePage={setActivePage} 
+          isAdmin={isAdmin} 
+          onLogout={handleSignOut}
+          organizationName={organizationName}
+        />
       </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto p-6">
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="dashboard">📊 Dashboard</TabsTrigger>
-            <TabsTrigger value="lancamentos">📋 Lançamentos</TabsTrigger>
-            <TabsTrigger value="profissionais">👩‍💼 Profissionais</TabsTrigger>
-            <TabsTrigger value="fluxo">💰 Fluxo de Caixa</TabsTrigger>
-          </TabsList>
+      {/* Mobile Sidebar Overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 z-50 md:hidden flex">
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm" onClick={() => setIsMobileMenuOpen(false)} />
+          <div className="relative animate-in slide-in-from-left duration-300">
+            <Sidebar 
+              activePage={activePage} 
+              setActivePage={(p) => { setActivePage(p); setIsMobileMenuOpen(false); }} 
+              isAdmin={isAdmin} 
+              onLogout={handleSignOut}
+              organizationName={organizationName}
+            />
+            <button 
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="absolute top-4 -right-12 p-2 bg-slate-900 text-white rounded-lg shadow-xl"
+            >
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+        </div>
+      )}
 
-          <TabsContent value="dashboard">
-            <Dashboard />
-          </TabsContent>
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="h-16 bg-white border-b border-slate-200 px-6 flex items-center justify-between z-10 sticky top-0">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setIsMobileMenuOpen(true)}
+              className="md:hidden p-2 hover:bg-slate-100 rounded-lg transition-colors"
+            >
+              <Menu className="w-6 h-6 text-slate-600" />
+            </button>
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight hidden sm:block">
+              {getPageTitle()}
+            </h2>
+          </div>
 
-          <TabsContent value="lancamentos">
-            <LancamentosList />
-          </TabsContent>
+          <div className="flex items-center gap-4">
+            <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-full text-slate-500 border border-slate-200">
+              <Search className="w-4 h-4" />
+              <span className="text-xs font-medium">Buscar dados...</span>
+              <span className="ml-4 text-[10px] bg-white border border-slate-300 px-1 rounded shadow-sm">⌘K</span>
+            </div>
+            
+            <div className="h-4 w-[1px] bg-slate-200 mx-2 hidden sm:block" />
 
-          <TabsContent value="profissionais">
-            <ProfissionaisReport />
-          </TabsContent>
+            <div className="flex items-center gap-2">
+              <div className="text-right hidden sm:block">
+                <p className="text-xs font-bold text-slate-900 leading-none">
+                  {adminData?.nome || 'Usuário'}
+                </p>
+                <p className="text-[10px] text-slate-500 font-medium">
+                  {organizationName || 'LYB Estética'}
+                </p>
+              </div>
+              <div className="w-9 h-9 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary font-bold shadow-inner">
+                {adminData?.nome?.[0] || <User className="w-5 h-5" />}
+              </div>
+            </div>
+          </div>
+        </header>
 
-          <TabsContent value="fluxo">
-            <FluxoCaixa />
-          </TabsContent>
-        </Tabs>
+        {/* Dynamic Page Content */}
+        <main className="flex-1 overflow-y-auto bg-slate-50/50">
+          <div className="container mx-auto py-8 px-6 max-w-7xl animate-in fade-in slide-in-from-bottom-2 duration-500">
+            {renderContent()}
+          </div>
+        </main>
       </div>
     </div>
   );

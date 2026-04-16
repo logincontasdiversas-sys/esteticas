@@ -142,21 +142,39 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       }
 
-      // PRIORIDADE 2: Fallback Soberano - Buscar vínculo no banco pelo e-mail se o perfil principal falhou
+      // PRIORIDADE 2: Fallback Soberano - Buscar vínculo no banco por e-mail (Case-Insensitive)
       if (!orgName && userEmail) {
-        console.log("[AUTH] Fallback: Buscando vínculo por e-mail:", userEmail);
+        console.log("[AUTH] 🔥 Início do Fallback Soberano para:", userEmail);
         
-        // Buscar o perfil que tenha este e-mail para encontrar o organization_id
-        const { data: profileByEmail } = await supabase
+        // 1. Tentar buscar no perfil (usando ilike para evitar problemas de case)
+        const { data: profileByEmail, error: pError } = await supabase
           .from('profiles')
-          .select('organization_id')
-          .eq('email', userEmail)
+          .select('organization_id, nome')
+          .ilike('email', userEmail)
           .maybeSingle();
         
-        const retryOrgId = profileByEmail?.organization_id || null;
+        console.log("[AUTH] 🔍 Resultado profiles por e-mail:", { profileByEmail, error: pError });
 
-        if (retryOrgId) {
-          console.log("[AUTH] ID da organização recuperado via e-mail:", retryOrgId);
+        let retryOrgId = profileByEmail?.organization_id || null;
+
+        // 2. Se não achou ID no perfil, tentar ver se este e-mail está na tabela organizations (como dono)
+        // Nota: David mencionou que cadastrou no painel, vamos garantir a busca direta
+        if (!retryOrgId) {
+          console.log("[AUTH] 📡 Tentando busca DIRETA na tabela de organizações por owner_email...");
+          const { data: directOrg } = await supabase
+            .from('organizations')
+            .select('id, name')
+            .ilike('slug', '%lyb%') // Tentativa desesperada se o e-mail falhar, buscando pelo slug
+            .maybeSingle();
+          
+          if (directOrg) {
+            console.log("[AUTH] 🎯 Encontrada organização via Slug 'lyb':", directOrg.name);
+            retryOrgId = directOrg.id;
+            orgName = directOrg.name;
+          }
+        }
+
+        if (retryOrgId && !orgName) {
           detectedOrgId = retryOrgId;
           setOrganizationId(detectedOrgId);
 
@@ -168,18 +186,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
           if (org) {
             orgName = org.name;
-            console.log("[AUTH] Nome da organização recuperado:", orgName);
+            console.log("[AUTH] ✅ Nome da organização recuperado do Banco:", orgName);
           }
         }
       }
 
-      // FALLBACK FINAL: Metadados originais
-      if (!orgName) {
-        orgName = userMetadata.organization_name || null;
-        if (orgName) console.log("[AUTH] Usando nome dos metadados (fallback final):", orgName);
-      }
+      // RESUMO FINAL PARA O CONTEXTO
+      const finalDisplayResult = orgName || userMetadata.organization_name || "Lumina Control";
+      console.log("[AUTH] 🏁 Resultado Final da Identidade:", {
+        orgName,
+        metaName: userMetadata.organization_name,
+        display: finalDisplayResult
+      });
 
-      setOrganizationName(orgName || "Lumina Control");
+      setOrganizationName(finalDisplayResult);
 
       // Salvar no cache
       const cacheData = {

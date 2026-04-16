@@ -60,7 +60,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsCheckingAdmin(true);
       console.log("[AUTH] Verificando status de admin para usuário:", userId);
       
-      try {
       // Verificar cache atualizado
       const cacheKey = `auth_admin_v13_${userId}`;
       const cachedAuth = localStorage.getItem(cacheKey);
